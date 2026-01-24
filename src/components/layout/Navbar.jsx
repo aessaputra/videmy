@@ -260,17 +260,16 @@ export function Navbar() {
                 elevation={0}
                 sx={(theme) => ({
                     bgcolor: alpha(
-                        theme.palette.background.paper,
-                        theme.palette.mode === 'dark' ? 0.85 : 0.8
+                        theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : theme.palette.background.paper,
+                        theme.palette.mode === 'dark' ? 0.95 : 0.8
                     ),
                     backdropFilter: 'blur(20px)',
                     borderBottom: `1px solid ${alpha(
                         theme.palette.divider,
-                        theme.palette.mode === 'dark' ? 0.3 : 0.1
+                        theme.palette.mode === 'dark' ? 0.15 : 0.1
                     )}`,
-                    boxShadow: theme.palette.mode === 'dark'
-                        ? `0 1px 3px ${alpha('#000', 0.3)}`
-                        : 'none',
                 })}
             >
                 <Container maxWidth="lg">

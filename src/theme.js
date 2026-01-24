@@ -33,15 +33,15 @@ let theme = createTheme({
         dark: {
             palette: {
                 primary: {
-                    main: '#2dd4bf',      // Lighter teal for dark mode
-                    light: '#5eead4',
-                    dark: '#14b8a6',
-                    contrastText: '#000000',
+                    main: '#14b8a6',      // Same teal as light mode
+                    light: '#2dd4bf',
+                    dark: '#0d9488',
+                    contrastText: '#ffffff',
                 },
                 secondary: {
-                    main: '#fbbf24',      // Lighter gold for dark mode
-                    light: '#fcd34d',
-                    dark: '#f59e0b',
+                    main: '#f59e0b',      // Same gold as light mode
+                    light: '#fbbf24',
+                    dark: '#d97706',
                     contrastText: '#000000',
                 },
                 background: {
