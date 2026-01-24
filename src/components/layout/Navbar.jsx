@@ -13,10 +13,13 @@ import {
     ListItem,
     ListItemButton,
     ListItemText,
+    ListItemIcon,
     Avatar,
     Divider,
     useTheme,
     useMediaQuery,
+    Chip,
+    alpha,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -25,6 +28,13 @@ import {
     Logout as LogoutIcon,
     DarkMode as DarkModeIcon,
     LightMode as LightModeIcon,
+    Login as LoginIcon,
+    PersonAdd as PersonAddIcon,
+    Dashboard as DashboardIcon,
+    Home as HomeIcon,
+    PlayCircle as PlayCircleIcon,
+    AdminPanelSettings as AdminIcon,
+    People as PeopleIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '@mui/material/styles';
@@ -32,8 +42,8 @@ import { useColorScheme } from '@mui/material/styles';
 /**
  * Navbar Component
  * 
- * MUI-based responsive navigation bar with mobile drawer.
- * Shows different links based on auth state and role.
+ * Enhanced MUI AppBar with glassmorphism effect, 
+ * improved styling, and responsive mobile drawer.
  */
 export function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -60,88 +70,163 @@ export function Navbar() {
 
     // Navigation links based on role
     const navLinks = [
-        { to: '/', label: 'Home' },
-        { to: '/courses', label: 'Courses' },
+        { to: '/', label: 'Home', icon: HomeIcon },
+        { to: '/courses', label: 'Courses', icon: PlayCircleIcon },
     ];
 
     const authNavLinks = [
-        { to: '/dashboard', label: 'Dashboard', roles: [ROLES.STUDENT, ROLES.INSTRUCTOR, ROLES.ADMIN] },
-        { to: '/admin/courses', label: 'Manage Courses', roles: [ROLES.INSTRUCTOR, ROLES.ADMIN] },
-        { to: '/admin/users', label: 'Users', roles: [ROLES.ADMIN] },
+        { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: [ROLES.STUDENT, ROLES.INSTRUCTOR, ROLES.ADMIN] },
+        { to: '/admin/courses', label: 'Manage Courses', icon: AdminIcon, roles: [ROLES.INSTRUCTOR, ROLES.ADMIN] },
+        { to: '/admin/users', label: 'Users', icon: PeopleIcon, roles: [ROLES.ADMIN] },
     ];
 
     // Mobile drawer content
     const drawer = (
-        <Box sx={{ width: 280, pt: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SchoolIcon color="primary" />
-                    <Typography variant="h6" color="primary" fontWeight={700}>
+        <Box sx={{ width: 300, pt: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
+                    </Box>
+                    <Typography variant="h6" fontWeight={700} color="primary">
                         Videmy
                     </Typography>
                 </Box>
-                <IconButton onClick={handleDrawerToggle}>
+                <IconButton onClick={handleDrawerToggle} size="small">
                     <CloseIcon />
                 </IconButton>
             </Box>
             <Divider />
-            <List>
+
+            {/* User info (if logged in) */}
+            {isAuthenticated && (
+                <Box sx={{ px: 2.5, py: 2, bgcolor: 'action.hover' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44 }}>
+                            {user?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                            <Typography variant="subtitle2" fontWeight={600}>
+                                {user?.name || 'User'}
+                            </Typography>
+                            <Chip
+                                label={user?.labels?.includes(ROLES.ADMIN) ? 'Admin' : user?.labels?.includes(ROLES.INSTRUCTOR) ? 'Instructor' : 'Student'}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                        </Box>
+                    </Box>
+                </Box>
+            )}
+
+            {/* Navigation */}
+            <List sx={{ flexGrow: 1, px: 1 }}>
                 {navLinks.map((link) => (
-                    <ListItem key={link.to} disablePadding>
+                    <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
                         <ListItemButton
                             component={NavLink}
                             to={link.to}
                             onClick={handleDrawerToggle}
+                            sx={{
+                                borderRadius: 2,
+                                '&.active': {
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                                },
+                            }}
                         >
+                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                <link.icon fontSize="small" />
+                            </ListItemIcon>
                             <ListItemText primary={link.label} />
                         </ListItemButton>
                     </ListItem>
                 ))}
 
+                {isAuthenticated && <Divider sx={{ my: 1.5 }} />}
+
                 {isAuthenticated &&
                     authNavLinks
                         .filter((link) => hasRole(link.roles))
                         .map((link) => (
-                            <ListItem key={link.to} disablePadding>
+                            <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
                                 <ListItemButton
                                     component={NavLink}
                                     to={link.to}
                                     onClick={handleDrawerToggle}
+                                    sx={{
+                                        borderRadius: 2,
+                                        '&.active': {
+                                            bgcolor: 'primary.main',
+                                            color: 'primary.contrastText',
+                                            '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                                        },
+                                    }}
                                 >
+                                    <ListItemIcon sx={{ minWidth: 40 }}>
+                                        <link.icon fontSize="small" />
+                                    </ListItemIcon>
                                     <ListItemText primary={link.label} />
                                 </ListItemButton>
                             </ListItem>
                         ))}
             </List>
+
+            {/* Footer Actions */}
             <Divider />
-            <List>
+            <Box sx={{ p: 2 }}>
                 {!isAuthenticated ? (
-                    <>
-                        <ListItem disablePadding>
-                            <ListItemButton component={NavLink} to="/login" onClick={handleDrawerToggle}>
-                                <ListItemText primary="Login" />
-                            </ListItemButton>
-                        </ListItem>
-                        <ListItem disablePadding>
-                            <ListItemButton component={NavLink} to="/register" onClick={handleDrawerToggle}>
-                                <ListItemText primary="Register" />
-                            </ListItemButton>
-                        </ListItem>
-                    </>
-                ) : (
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            onClick={() => {
-                                handleLogout();
-                                handleDrawerToggle();
-                            }}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Button
+                            component={NavLink}
+                            to="/login"
+                            variant="outlined"
+                            fullWidth
+                            startIcon={<LoginIcon />}
+                            onClick={handleDrawerToggle}
                         >
-                            <LogoutIcon sx={{ mr: 2 }} />
-                            <ListItemText primary="Logout" />
-                        </ListItemButton>
-                    </ListItem>
+                            Sign In
+                        </Button>
+                        <Button
+                            component={NavLink}
+                            to="/register"
+                            variant="contained"
+                            fullWidth
+                            startIcon={<PersonAddIcon />}
+                            onClick={handleDrawerToggle}
+                        >
+                            Sign Up
+                        </Button>
+                    </Box>
+                ) : (
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={() => {
+                            handleLogout();
+                            handleDrawerToggle();
+                        }}
+                    >
+                        Sign Out
+                    </Button>
                 )}
-            </List>
+            </Box>
         </Box>
     );
 
@@ -149,14 +234,16 @@ export function Navbar() {
         <>
             <AppBar
                 position="sticky"
+                elevation={0}
                 sx={{
-                    bgcolor: 'background.paper',
+                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+                    backdropFilter: 'blur(20px)',
                     borderBottom: 1,
                     borderColor: 'divider',
                 }}
             >
                 <Container maxWidth="lg">
-                    <Toolbar disableGutters sx={{ gap: 2 }}>
+                    <Toolbar disableGutters sx={{ gap: 2, minHeight: { xs: 64, md: 70 } }}>
                         {/* Logo */}
                         <Box
                             component={Link}
@@ -164,25 +251,43 @@ export function Navbar() {
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 1,
+                                gap: 1.5,
                                 textDecoration: 'none',
                                 flexGrow: { xs: 1, md: 0 },
                             }}
                         >
-                            <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
+                            <Box
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 2,
+                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                }}
+                            >
+                                <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
+                            </Box>
                             <Typography
-                                variant="h6"
+                                variant="h5"
                                 component="span"
-                                color="primary"
-                                fontWeight={700}
-                                sx={{ display: { xs: 'none', sm: 'block' } }}
+                                sx={{
+                                    fontWeight: 800,
+                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                    backgroundClip: 'text',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    display: { xs: 'none', sm: 'block' },
+                                }}
                             >
                                 Videmy
                             </Typography>
                         </Box>
 
                         {/* Desktop Navigation */}
-                        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1, ml: 4 }}>
+                        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, flexGrow: 1, ml: 4 }}>
                             {navLinks.map((link) => (
                                 <Button
                                     key={link.to}
@@ -191,9 +296,19 @@ export function Navbar() {
                                     color="inherit"
                                     sx={{
                                         color: 'text.secondary',
+                                        px: 2,
+                                        py: 1,
+                                        borderRadius: 2,
+                                        fontWeight: 500,
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                            color: 'text.primary',
+                                        },
                                         '&.active': {
                                             color: 'primary.main',
                                             fontWeight: 600,
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
                                         },
                                     }}
                                 >
@@ -212,9 +327,19 @@ export function Navbar() {
                                             color="inherit"
                                             sx={{
                                                 color: 'text.secondary',
+                                                px: 2,
+                                                py: 1,
+                                                borderRadius: 2,
+                                                fontWeight: 500,
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    bgcolor: 'action.hover',
+                                                    color: 'text.primary',
+                                                },
                                                 '&.active': {
                                                     color: 'primary.main',
                                                     fontWeight: 600,
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
                                                 },
                                             }}
                                         >
@@ -226,8 +351,18 @@ export function Navbar() {
                         {/* Actions */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             {/* Theme Toggle */}
-                            <IconButton onClick={handleThemeToggle} color="inherit">
-                                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                            <IconButton
+                                onClick={handleThemeToggle}
+                                sx={{
+                                    bgcolor: 'action.hover',
+                                    '&:hover': { bgcolor: 'action.selected' },
+                                }}
+                            >
+                                {mode === 'dark' ? (
+                                    <LightModeIcon sx={{ color: 'warning.main' }} />
+                                ) : (
+                                    <DarkModeIcon sx={{ color: 'text.secondary' }} />
+                                )}
                             </IconButton>
 
                             {isAuthenticated ? (
@@ -235,20 +370,35 @@ export function Navbar() {
                                     <Avatar
                                         sx={{
                                             bgcolor: 'primary.main',
-                                            width: 36,
-                                            height: 36,
+                                            width: 38,
+                                            height: 38,
                                             display: { xs: 'none', sm: 'flex' },
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s ease',
+                                            '&:hover': { transform: 'scale(1.05)' },
                                         }}
                                     >
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </Avatar>
                                     <Button
-                                        color="inherit"
                                         onClick={handleLogout}
+                                        variant="outlined"
+                                        color="inherit"
+                                        size="small"
                                         startIcon={<LogoutIcon />}
-                                        sx={{ display: { xs: 'none', md: 'flex' } }}
+                                        sx={{
+                                            display: { xs: 'none', md: 'flex' },
+                                            borderColor: 'divider',
+                                            color: 'text.secondary',
+                                            '&:hover': {
+                                                borderColor: 'error.main',
+                                                color: 'error.main',
+                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+                                            },
+                                        }}
                                     >
-                                        Logout
+                                        Sign Out
                                     </Button>
                                 </>
                             ) : (
@@ -256,30 +406,46 @@ export function Navbar() {
                                     <Button
                                         component={Link}
                                         to="/login"
-                                        color="inherit"
-                                        sx={{ display: { xs: 'none', sm: 'flex' } }}
+                                        variant="text"
+                                        sx={{
+                                            display: { xs: 'none', sm: 'flex' },
+                                            color: 'text.primary',
+                                            fontWeight: 600,
+                                            '&:hover': { bgcolor: 'action.hover' },
+                                        }}
                                     >
-                                        Login
+                                        Sign In
                                     </Button>
                                     <Button
                                         component={Link}
                                         to="/register"
                                         variant="contained"
                                         color="primary"
-                                        sx={{ display: { xs: 'none', md: 'flex' } }}
+                                        sx={{
+                                            display: { xs: 'none', md: 'flex' },
+                                            fontWeight: 600,
+                                            px: 3,
+                                            boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                            '&:hover': {
+                                                boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.5)}`,
+                                            },
+                                        }}
                                     >
-                                        Get Started
+                                        Sign Up
                                     </Button>
                                 </>
                             )}
 
                             {/* Mobile Menu Toggle */}
                             <IconButton
-                                color="inherit"
                                 aria-label="open drawer"
                                 edge="end"
                                 onClick={handleDrawerToggle}
-                                sx={{ display: { md: 'none' } }}
+                                sx={{
+                                    display: { md: 'none' },
+                                    bgcolor: 'action.hover',
+                                    '&:hover': { bgcolor: 'action.selected' },
+                                }}
                             >
                                 <MenuIcon />
                             </IconButton>
@@ -297,7 +463,10 @@ export function Navbar() {
                 ModalProps={{ keepMounted: true }}
                 sx={{
                     display: { xs: 'block', md: 'none' },
-                    '& .MuiDrawer-paper': { width: 280 },
+                    '& .MuiDrawer-paper': {
+                        width: 300,
+                        borderRadius: '16px 0 0 16px',
+                    },
                 }}
             >
                 {drawer}
