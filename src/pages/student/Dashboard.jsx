@@ -1,12 +1,34 @@
 import { Link } from 'react-router-dom';
-import { HiPlay, HiAcademicCap, HiClock, HiCheckCircle } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Typography,
+    Grid,
+    Card,
+    CardContent,
+    CardMedia,
+    Button,
+    LinearProgress,
+    Stack,
+    Chip,
+} from '@mui/material';
+import {
+    PlayArrow as PlayIcon,
+    School as SchoolIcon,
+    CheckCircle as CheckIcon,
+    AccessTime as TimeIcon,
+} from '@mui/icons-material';
+import { motion as MotionLibrary } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/common';
+
+// Motion wrapper
+const MotionBox = MotionLibrary.create(Box);
+const MotionCard = MotionLibrary.create(Card);
 
 /**
  * Dashboard Page
  * 
- * Student dashboard showing enrolled courses and progress.
+ * MUI-based student dashboard showing enrolled courses and progress.
  */
 export function Dashboard() {
     const { user, hasRole, ROLES } = useAuth();
@@ -37,166 +59,230 @@ export function Dashboard() {
         {
             label: 'Enrolled Courses',
             value: enrolledCourses.length,
-            icon: HiAcademicCap,
-            color: 'var(--color-primary)'
+            icon: SchoolIcon,
+            color: 'primary.main',
         },
         {
             label: 'Completed Lessons',
             value: enrolledCourses.reduce((acc, c) => acc + c.completedLessons, 0),
-            icon: HiCheckCircle,
-            color: 'var(--color-success)'
+            icon: CheckIcon,
+            color: 'success.main',
         },
         {
             label: 'Hours Learned',
             value: '12.5',
-            icon: HiClock,
-            color: 'var(--color-warning)'
+            icon: TimeIcon,
+            color: 'warning.main',
         },
         {
             label: 'Avg Progress',
             value: `${Math.round(enrolledCourses.reduce((acc, c) => acc + c.progress, 0) / enrolledCourses.length || 0)}%`,
-            icon: HiPlay,
-            color: 'var(--color-info)'
+            icon: PlayIcon,
+            color: 'info.main',
         },
     ];
 
     return (
-        <div className="dashboard">
-            <div className="container">
+        <Box sx={{ py: { xs: 4, md: 6 } }}>
+            <Container maxWidth="lg">
                 {/* Header */}
-                <div className="dashboard__header">
-                    <h1 className="dashboard__title">Welcome back, {user?.name || 'Student'}!</h1>
-                    <p className="dashboard__subtitle">
+                <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    sx={{ mb: 4 }}
+                >
+                    <Typography variant="h3" fontWeight={700} gutterBottom>
+                        Welcome back, {user?.name || 'Student'}!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
                         {hasRole(ROLES.INSTRUCTOR)
                             ? 'Manage your courses and track student progress'
                             : 'Continue your learning journey'}
-                    </p>
-                </div>
+                    </Typography>
+                </MotionBox>
 
                 {/* Stats */}
-                <div className="dashboard__stats">
+                <Grid container spacing={2} sx={{ mb: 4 }}>
                     {stats.map((stat, index) => (
-                        <div key={index} className="stat-card">
-                            <div className="flex items-center gap-sm mb-sm">
-                                <stat.icon size={20} style={{ color: stat.color }} />
-                                <span className="stat-card__label">{stat.label}</span>
-                            </div>
-                            <div className="stat-card__value">{stat.value}</div>
-                        </div>
+                        <Grid key={index} size={{ xs: 6, md: 3 }}>
+                            <MotionCard
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                sx={{ '&:hover': { transform: 'none' } }}
+                            >
+                                <CardContent>
+                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                                        <stat.icon sx={{ color: stat.color, fontSize: 20 }} />
+                                        <Typography variant="body2" color="text.secondary">
+                                            {stat.label}
+                                        </Typography>
+                                    </Stack>
+                                    <Typography variant="h4" fontWeight={700}>
+                                        {stat.value}
+                                    </Typography>
+                                </CardContent>
+                            </MotionCard>
+                        </Grid>
                     ))}
-                </div>
+                </Grid>
 
                 {/* Quick Actions for Instructor/Admin */}
                 {hasRole([ROLES.INSTRUCTOR, ROLES.ADMIN]) && (
-                    <div className="card mb-xl">
-                        <h2 className="text-lg font-semibold mb-md">Quick Actions</h2>
-                        <div className="flex gap-md flex-wrap">
-                            <Link to="/admin/courses">
-                                <Button variant="primary">
-                                    <HiAcademicCap />
-                                    Manage Courses
-                                </Button>
-                            </Link>
-                            <Link to="/admin/courses/new">
-                                <Button variant="secondary">
-                                    Create New Course
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
+                    <Card sx={{ mb: 4, p: 3 }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                            Quick Actions
+                        </Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                            <Button
+                                component={Link}
+                                to="/admin/courses"
+                                variant="contained"
+                                startIcon={<SchoolIcon />}
+                            >
+                                Manage Courses
+                            </Button>
+                            <Button
+                                component={Link}
+                                to="/admin/courses/new"
+                                variant="outlined"
+                            >
+                                Create New Course
+                            </Button>
+                        </Stack>
+                    </Card>
                 )}
 
-                {/* Enrolled Courses */}
-                <div>
-                    <div className="flex items-center justify-between mb-lg">
-                        <h2 className="text-xl font-semibold">My Courses</h2>
-                        <Link to="/courses">
-                            <Button variant="ghost" size="sm">
-                                Browse More
-                            </Button>
-                        </Link>
-                    </div>
+                {/* My Courses */}
+                <Box>
+                    <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ mb: 3 }}
+                    >
+                        <Typography variant="h5" fontWeight={600}>
+                            My Courses
+                        </Typography>
+                        <Button
+                            component={Link}
+                            to="/courses"
+                            variant="text"
+                        >
+                            Browse More
+                        </Button>
+                    </Stack>
 
                     {enrolledCourses.length > 0 ? (
-                        <div className="courses-grid">
-                            {enrolledCourses.map((course) => (
-                                <div key={course.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                                    {/* Thumbnail */}
-                                    <div style={{ aspectRatio: '16/9', position: 'relative' }}>
-                                        <img
-                                            src={course.thumbnail}
-                                            alt={course.title}
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: 0,
-                                                left: 0,
-                                                right: 0,
-                                                height: '4px',
-                                                background: 'var(--color-bg-tertiary)',
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    height: '100%',
-                                                    width: `${course.progress}%`,
-                                                    background: 'linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%)',
+                        <Grid container spacing={3}>
+                            {enrolledCourses.map((course, index) => (
+                                <Grid key={course.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <MotionCard
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.3 + index * 0.1 }}
+                                        sx={{ height: '100%' }}
+                                    >
+                                        <Box sx={{ position: 'relative' }}>
+                                            <CardMedia
+                                                component="img"
+                                                height="160"
+                                                image={course.thumbnail}
+                                                alt={course.title}
+                                            />
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={course.progress}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    height: 4,
                                                 }}
                                             />
-                                        </div>
-                                    </div>
+                                        </Box>
 
-                                    {/* Content */}
-                                    <div style={{ padding: 'var(--space-lg)' }}>
-                                        <h3 className="font-semibold mb-sm" style={{
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden',
-                                        }}>
-                                            {course.title}
-                                        </h3>
+                                        <CardContent>
+                                            <Typography
+                                                variant="subtitle1"
+                                                fontWeight={600}
+                                                sx={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    mb: 1,
+                                                    minHeight: 48,
+                                                }}
+                                            >
+                                                {course.title}
+                                            </Typography>
 
-                                        <div className="flex items-center justify-between mb-md">
-                                            <span className="text-sm text-secondary">
-                                                {course.completedLessons} / {course.totalLessons} lessons
-                                            </span>
-                                            <span className="badge badge--primary">{course.progress}%</span>
-                                        </div>
+                                            <Stack
+                                                direction="row"
+                                                justifyContent="space-between"
+                                                alignItems="center"
+                                                sx={{ mb: 1 }}
+                                            >
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {course.completedLessons} / {course.totalLessons} lessons
+                                                </Typography>
+                                                <Chip
+                                                    label={`${course.progress}%`}
+                                                    size="small"
+                                                    color="primary"
+                                                />
+                                            </Stack>
 
-                                        <p className="text-sm text-muted mb-md">
-                                            Last: {course.lastLesson.title}
-                                        </p>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                display="block"
+                                                sx={{ mb: 2 }}
+                                            >
+                                                Last: {course.lastLesson.title}
+                                            </Typography>
 
-                                        <Link to={`/learn/${course.id}/${course.lastLesson.id}`}>
-                                            <Button variant="primary" fullWidth>
-                                                <HiPlay />
+                                            <Button
+                                                component={Link}
+                                                to={`/learn/${course.id}/${course.lastLesson.id}`}
+                                                variant="contained"
+                                                fullWidth
+                                                startIcon={<PlayIcon />}
+                                            >
                                                 Continue
                                             </Button>
-                                        </Link>
-                                    </div>
-                                </div>
+                                        </CardContent>
+                                    </MotionCard>
+                                </Grid>
                             ))}
-                        </div>
+                        </Grid>
                     ) : (
-                        <div className="empty-state">
-                            <div className="empty-state__icon">📚</div>
-                            <h3 className="empty-state__title">No courses yet</h3>
-                            <p className="empty-state__desc">
-                                You haven't enrolled in any courses. Start learning today!
-                            </p>
-                            <Link to="/courses">
-                                <Button variant="primary">
+                        <Card>
+                            <CardContent sx={{ textAlign: 'center', py: 8 }}>
+                                <Typography variant="h2" sx={{ mb: 2 }}>📚</Typography>
+                                <Typography variant="h6" gutterBottom>
+                                    No courses yet
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                    You haven't enrolled in any courses. Start learning today!
+                                </Typography>
+                                <Button
+                                    component={Link}
+                                    to="/courses"
+                                    variant="contained"
+                                >
                                     Browse Courses
                                 </Button>
-                            </Link>
-                        </div>
+                            </CardContent>
+                        </Card>
                     )}
-                </div>
-            </div>
-        </div>
+                </Box>
+            </Container>
+        </Box>
     );
 }
 

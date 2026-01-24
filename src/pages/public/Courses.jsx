@@ -1,21 +1,32 @@
-import { useState } from 'react';
-import { HiSearch, HiFilter } from 'react-icons/hi';
-import { Button, Input, motion, AnimatedSection } from '../../components/common';
+import { useState, useMemo } from 'react';
+import {
+    Box,
+    Container,
+    Typography,
+    TextField,
+    Grid,
+    Chip,
+    Stack,
+    InputAdornment,
+} from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { motion as MotionLibrary } from 'motion/react';
 import { CourseCard } from '../../components/course';
-import { useListAnimation } from '../../hooks/useListAnimation';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+
+// Motion wrapper
+const MotionBox = MotionLibrary.create(Box);
 
 /**
  * Courses Page
  * 
- * Course catalog with search and filter functionality.
- * Uses auto-animate for smooth list transitions when filtering.
+ * MUI-based course catalog with search and category filter.
+ * Uses auto-animate for smooth list transitions.
  */
 export function Courses() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('all');
-
-    // Auto-animate for smooth list transitions
-    const [coursesRef] = useListAnimation();
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [animateRef] = useAutoAnimate();
 
     // Demo courses (will be fetched from Appwrite later)
     const allCourses = [
@@ -48,7 +59,7 @@ export function Courses() {
         },
         {
             id: '4',
-            title: 'React Native Mobile Development',
+            title: 'Mobile App Development with React Native',
             description: 'Bangun aplikasi mobile cross-platform dengan React Native.',
             category: 'Mobile Development',
             thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800',
@@ -57,130 +68,122 @@ export function Courses() {
         },
         {
             id: '5',
-            title: 'Digital Marketing Fundamentals',
-            description: 'Pelajari strategi marketing digital, SEO, dan social media.',
+            title: 'Digital Marketing Complete Guide',
+            description: 'Strategi pemasaran digital dari SEO hingga Social Media Marketing.',
             category: 'Marketing',
             thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
-            lessonsCount: 45,
+            lessonsCount: 65,
             studentsCount: 2100,
         },
         {
             id: '6',
-            title: 'JavaScript Advanced Concepts',
-            description: 'Kuasai konsep advanced JavaScript: closures, promises, async/await.',
+            title: 'Advanced JavaScript Patterns',
+            description: 'Design patterns dan praktik terbaik untuk JavaScript modern.',
             category: 'Web Development',
             thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800',
-            lessonsCount: 65,
-            studentsCount: 1900,
+            lessonsCount: 45,
+            studentsCount: 980,
         },
     ];
 
     // Get unique categories
-    const categories = ['all', ...new Set(allCourses.map(course => course.category))];
+    const categories = ['All', ...new Set(allCourses.map((c) => c.category))];
 
     // Filter courses based on search and category
-    const filteredCourses = allCourses.filter(course => {
-        const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            course.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    const filteredCourses = useMemo(() => {
+        return allCourses.filter((course) => {
+            const matchesSearch =
+                course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                course.description.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory =
+                selectedCategory === 'All' || course.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [searchQuery, selectedCategory]);
 
     return (
-        <div className="py-xl">
-            <div className="container">
-                {/* Header - Animated */}
-                <motion.div
-                    className="mb-xl"
+        <Box sx={{ py: { xs: 4, md: 6 } }}>
+            <Container maxWidth="lg">
+                {/* Page Header */}
+                <MotionBox
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
+                    sx={{ mb: 4 }}
                 >
-                    <h1 className="text-3xl font-bold mb-sm">All Courses</h1>
-                    <p className="text-secondary">
-                        Temukan kursus yang sesuai dengan minat dan tujuan karir Anda
-                    </p>
-                </motion.div>
+                    <Typography variant="h3" fontWeight={700} gutterBottom>
+                        All Courses
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                        Temukan kursus yang sesuai dengan minat dan kebutuhan Anda
+                    </Typography>
+                </MotionBox>
 
-                {/* Search and Filter - Animated */}
-                <motion.div
-                    className="flex flex-col gap-md mb-xl"
-                    style={{ maxWidth: '100%' }}
+                {/* Search and Filter */}
+                <MotionBox
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
+                    sx={{ mb: 4 }}
                 >
-                    <div style={{ flex: 1 }}>
-                        <div style={{ position: 'relative' }}>
-                            <HiSearch
-                                size={20}
-                                style={{
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: 'var(--color-text-muted)'
-                                }}
-                            />
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="Search courses..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ paddingLeft: '40px' }}
-                            />
-                        </div>
-                    </div>
+                    <TextField
+                        fullWidth
+                        placeholder="Cari kursus..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ mb: 3 }}
+                    />
 
-                    <div className="flex gap-sm flex-wrap">
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         {categories.map((category) => (
-                            <Button
+                            <Chip
                                 key={category}
-                                variant={selectedCategory === category ? 'primary' : 'secondary'}
-                                size="sm"
+                                label={category}
                                 onClick={() => setSelectedCategory(category)}
+                                color={selectedCategory === category ? 'primary' : 'default'}
+                                variant={selectedCategory === category ? 'filled' : 'outlined'}
+                                sx={{ mb: 1 }}
+                            />
+                        ))}
+                    </Stack>
+                </MotionBox>
+
+                {/* Course Grid with auto-animate */}
+                <Grid container spacing={3} ref={animateRef}>
+                    {filteredCourses.map((course) => (
+                        <Grid key={course.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <CourseCard course={course} />
+                        </Grid>
+                    ))}
+
+                    {filteredCourses.length === 0 && (
+                        <Grid size={12}>
+                            <Box
+                                sx={{
+                                    textAlign: 'center',
+                                    py: 8,
+                                    color: 'text.secondary',
+                                }}
                             >
-                                {category === 'all' ? 'All Categories' : category}
-                            </Button>
-                        ))}
-                    </div>
-                </motion.div>
-
-                {/* Results count */}
-                <p className="text-secondary text-sm mb-lg">
-                    Showing {filteredCourses.length} of {allCourses.length} courses
-                </p>
-
-                {/* Course Grid - Auto-animated for smooth filtering */}
-                {filteredCourses.length > 0 ? (
-                    <div ref={coursesRef} className="courses-grid">
-                        {filteredCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
-                        ))}
-                    </div>
-                ) : (
-                    <motion.div
-                        className="empty-state"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <div className="empty-state__icon">🔍</div>
-                        <h3 className="empty-state__title">No courses found</h3>
-                        <p className="empty-state__desc">
-                            Try adjusting your search or filter to find what you're looking for.
-                        </p>
-                        <Button variant="secondary" onClick={() => {
-                            setSearchQuery('');
-                            setSelectedCategory('all');
-                        }}>
-                            Clear Filters
-                        </Button>
-                    </motion.div>
-                )}
-            </div>
-        </div>
+                                <Typography variant="h6" gutterBottom>
+                                    Tidak ada kursus ditemukan
+                                </Typography>
+                                <Typography variant="body2">
+                                    Coba ubah kata kunci pencarian atau filter kategori
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    )}
+                </Grid>
+            </Container>
+        </Box>
     );
 }
 

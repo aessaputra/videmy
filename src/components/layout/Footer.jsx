@@ -1,64 +1,119 @@
 import { Link } from 'react-router-dom';
-import { HiAcademicCap } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Grid,
+    Typography,
+    Link as MuiLink,
+    Divider,
+    Stack,
+} from '@mui/material';
+import { School as SchoolIcon } from '@mui/icons-material';
 
 /**
  * Footer Component
  * 
- * Site footer with navigation links and branding.
+ * MUI-based responsive footer with navigation links and branding.
  */
 export function Footer() {
     const currentYear = new Date().getFullYear();
 
+    const footerLinks = {
+        platform: [
+            { label: 'All Courses', to: '/courses' },
+            { label: 'Dashboard', to: '/dashboard' },
+        ],
+        company: [
+            { label: 'About', to: '/' },
+            { label: 'Contact', to: '/' },
+            { label: 'Careers', to: '/' },
+        ],
+        legal: [
+            { label: 'Privacy Policy', to: '/' },
+            { label: 'Terms of Service', to: '/' },
+        ],
+    };
+
+    const LinkSection = ({ title, links }) => (
+        <Box>
+            <Typography
+                variant="subtitle1"
+                fontWeight={600}
+                gutterBottom
+                color="text.primary"
+            >
+                {title}
+            </Typography>
+            <Stack spacing={1}>
+                {links.map((link) => (
+                    <MuiLink
+                        key={link.label}
+                        component={Link}
+                        to={link.to}
+                        underline="hover"
+                        color="text.secondary"
+                        sx={{
+                            transition: 'color 0.2s',
+                            '&:hover': { color: 'primary.main' },
+                        }}
+                    >
+                        {link.label}
+                    </MuiLink>
+                ))}
+            </Stack>
+        </Box>
+    );
+
     return (
-        <footer className="footer">
-            <div className="container">
-                <div className="footer__content">
+        <Box
+            component="footer"
+            sx={{
+                bgcolor: 'background.paper',
+                borderTop: 1,
+                borderColor: 'divider',
+                py: 6,
+                mt: 'auto',
+            }}
+        >
+            <Container maxWidth="lg">
+                <Grid container spacing={4}>
                     {/* Brand */}
-                    <div className="footer__brand">
-                        <div className="footer__logo">
-                            <HiAcademicCap style={{ display: 'inline', marginRight: '0.5rem' }} />
-                            Videmy
-                        </div>
-                        <p className="footer__desc">
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
+                            <Typography variant="h6" color="primary" fontWeight={700}>
+                                Videmy
+                            </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 280 }}>
                             Platform kursus online berbasis video untuk meningkatkan skill Anda.
                             Belajar dari mana saja, kapan saja.
-                        </p>
-                    </div>
+                        </Typography>
+                    </Grid>
 
-                    {/* Quick Links */}
-                    <div>
-                        <h4 className="footer__section-title">Platform</h4>
-                        <nav className="footer__links">
-                            <Link to="/courses" className="footer__link">All Courses</Link>
-                            <Link to="/dashboard" className="footer__link">Dashboard</Link>
-                        </nav>
-                    </div>
+                    {/* Platform Links */}
+                    <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+                        <LinkSection title="Platform" links={footerLinks.platform} />
+                    </Grid>
 
-                    {/* Company */}
-                    <div>
-                        <h4 className="footer__section-title">Company</h4>
-                        <nav className="footer__links">
-                            <Link to="/" className="footer__link">About</Link>
-                            <Link to="/" className="footer__link">Contact</Link>
-                            <Link to="/" className="footer__link">Careers</Link>
-                        </nav>
-                    </div>
+                    {/* Company Links */}
+                    <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+                        <LinkSection title="Company" links={footerLinks.company} />
+                    </Grid>
 
-                    {/* Legal */}
-                    <div>
-                        <h4 className="footer__section-title">Legal</h4>
-                        <nav className="footer__links">
-                            <Link to="/" className="footer__link">Privacy Policy</Link>
-                            <Link to="/" className="footer__link">Terms of Service</Link>
-                        </nav>
-                    </div>
-                </div>
+                    {/* Legal Links */}
+                    <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+                        <LinkSection title="Legal" links={footerLinks.legal} />
+                    </Grid>
+                </Grid>
 
-                <div className="footer__bottom">
-                    <p>&copy; {currentYear} Videmy. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
+                <Divider sx={{ my: 4 }} />
+
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                    © {currentYear} Videmy. All rights reserved.
+                </Typography>
+            </Container>
+        </Box>
     );
 }
 

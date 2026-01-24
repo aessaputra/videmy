@@ -1,10 +1,23 @@
 import { Link } from 'react-router-dom';
-import { HiPlay, HiUsers, HiClock } from 'react-icons/hi';
+import {
+    Card,
+    CardMedia,
+    CardContent,
+    Typography,
+    Chip,
+    Box,
+    Stack,
+} from '@mui/material';
+import {
+    PlayArrow as PlayIcon,
+    People as PeopleIcon,
+    AccessTime as TimeIcon,
+} from '@mui/icons-material';
 
 /**
  * Course Card Component
  * 
- * Displays course preview with thumbnail, title, and metadata.
+ * MUI-based card displaying course preview with thumbnail, title, and metadata.
  * 
  * @param {Object} props
  * @param {Object} props.course - Course data object
@@ -22,47 +35,104 @@ export function CourseCard({ course }) {
     } = course;
 
     // Generate placeholder thumbnail if none provided
-    const imageUrl = thumbnail || `https://via.placeholder.com/800x450/1e293b/6366f1?text=${encodeURIComponent(title)}`;
+    const imageUrl = thumbnail || `https://via.placeholder.com/800x450/0d9488/ffffff?text=${encodeURIComponent(title)}`;
 
     return (
-        <Link to={`/courses/${id}`} className="course-card">
-            <div className="course-card__image">
-                <img
-                    src={imageUrl}
-                    alt={title}
-                    loading="lazy"
-                />
-            </div>
+        <Card
+            component={Link}
+            to={`/courses/${id}`}
+            sx={{
+                display: 'block',
+                textDecoration: 'none',
+                height: '100%',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6,
+                },
+            }}
+        >
+            <CardMedia
+                component="img"
+                height="180"
+                image={imageUrl}
+                alt={title}
+                sx={{
+                    objectFit: 'cover',
+                }}
+            />
 
-            <div className="course-card__content">
+            <CardContent>
                 {category && (
-                    <span className="course-card__category">{category}</span>
+                    <Chip
+                        label={category}
+                        size="small"
+                        color="primary"
+                        sx={{ mb: 1.5 }}
+                    />
                 )}
 
-                <h3 className="course-card__title">{title}</h3>
+                <Typography
+                    variant="h6"
+                    component="h3"
+                    sx={{
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        mb: 1,
+                        minHeight: 56,
+                    }}
+                >
+                    {title}
+                </Typography>
 
                 {description && (
-                    <p className="course-card__desc">{description}</p>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            mb: 2,
+                            minHeight: 40,
+                        }}
+                    >
+                        {description}
+                    </Typography>
                 )}
 
-                <div className="course-card__meta">
-                    <span className="course-card__meta-item">
-                        <HiPlay size={14} />
-                        {lessonsCount} lessons
-                    </span>
-                    <span className="course-card__meta-item">
-                        <HiUsers size={14} />
-                        {studentsCount.toLocaleString()} students
-                    </span>
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{ color: 'text.secondary' }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <PlayIcon sx={{ fontSize: 16 }} />
+                        <Typography variant="caption">
+                            {lessonsCount} lessons
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <PeopleIcon sx={{ fontSize: 16 }} />
+                        <Typography variant="caption">
+                            {studentsCount.toLocaleString()} students
+                        </Typography>
+                    </Box>
                     {duration && (
-                        <span className="course-card__meta-item">
-                            <HiClock size={14} />
-                            {duration}
-                        </span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <TimeIcon sx={{ fontSize: 16 }} />
+                            <Typography variant="caption">{duration}</Typography>
+                        </Box>
                     )}
-                </div>
-            </div>
-        </Link>
+                </Stack>
+            </CardContent>
+        </Card>
     );
 }
 

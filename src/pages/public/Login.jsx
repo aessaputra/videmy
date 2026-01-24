@@ -1,19 +1,41 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { HiMail, HiLockClosed, HiAcademicCap } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Card,
+    CardContent,
+    Typography,
+    TextField,
+    Button,
+    Alert,
+    InputAdornment,
+    IconButton,
+} from '@mui/material';
+import {
+    Email as EmailIcon,
+    Lock as LockIcon,
+    Visibility,
+    VisibilityOff,
+    School as SchoolIcon,
+} from '@mui/icons-material';
+import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Input, motion } from '../../components/common';
+
+// Motion wrapper
+const MotionCard = motion.create(Card);
 
 /**
  * Login Page
  * 
- * User authentication form with email and password.
+ * MUI-based user authentication form with email and password.
  * Animated card entrance for better UX.
  */
 export function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -65,66 +87,135 @@ export function Login() {
     };
 
     return (
-        <div className="auth-page">
-            <motion.div
-                className="auth-card"
-                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-            >
-                <div className="auth-card__header">
-                    <Link to="/" className="navbar__logo" style={{ display: 'block', marginBottom: 'var(--space-md)' }}>
-                        <HiAcademicCap style={{ display: 'inline', marginRight: '0.5rem' }} />
-                        Videmy
-                    </Link>
-                    <h1 className="auth-card__title">Welcome Back</h1>
-                    <p className="auth-card__subtitle">
-                        Sign in to continue your learning journey
-                    </p>
-                </div>
+        <Box
+            sx={{
+                minHeight: 'calc(100vh - 200px)',
+                display: 'flex',
+                alignItems: 'center',
+                py: 6,
+            }}
+        >
+            <Container maxWidth="sm">
+                <MotionCard
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    sx={{ p: { xs: 3, sm: 4 } }}
+                >
+                    <CardContent>
+                        {/* Logo */}
+                        <Box
+                            component={Link}
+                            to="/"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                textDecoration: 'none',
+                                mb: 3,
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
+                            <Typography variant="h5" color="primary" fontWeight={700}>
+                                Videmy
+                            </Typography>
+                        </Box>
 
-                <form className="auth-card__form" onSubmit={handleSubmit}>
-                    <Input
-                        label="Email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        error={errors.email}
-                        autoComplete="email"
-                    />
+                        <Typography variant="h5" fontWeight={600} textAlign="center" gutterBottom>
+                            Welcome Back
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            textAlign="center"
+                            sx={{ mb: 4 }}
+                        >
+                            Sign in to continue your learning journey
+                        </Typography>
 
-                    <Input
-                        label="Password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        error={errors.password}
-                        autoComplete="current-password"
-                    />
+                        <Box component="form" onSubmit={handleSubmit}>
+                            <TextField
+                                fullWidth
+                                label="Email"
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                error={!!errors.email}
+                                helperText={errors.email}
+                                autoComplete="email"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <EmailIcon color="action" />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ mb: 2 }}
+                            />
 
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        fullWidth
-                        loading={loading}
-                    >
-                        <HiLockClosed />
-                        Sign In
-                    </Button>
-                </form>
+                            <TextField
+                                fullWidth
+                                label="Password"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                error={!!errors.password}
+                                helperText={errors.password}
+                                autoComplete="current-password"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <LockIcon color="action" />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                edge="end"
+                                            >
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ mb: 3 }}
+                            />
 
-                <div className="auth-card__footer">
-                    <p>
-                        Don't have an account?{' '}
-                        <Link to="/register" style={{ color: 'var(--color-primary-light)' }}>
-                            Create one
-                        </Link>
-                    </p>
-                </div>
-            </motion.div>
-        </div>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                size="large"
+                                disabled={loading}
+                                startIcon={<LockIcon />}
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
+                            </Button>
+                        </Box>
+
+                        <Typography
+                            variant="body2"
+                            textAlign="center"
+                            sx={{ mt: 3 }}
+                        >
+                            Don't have an account?{' '}
+                            <Typography
+                                component={Link}
+                                to="/register"
+                                color="primary"
+                                sx={{ textDecoration: 'none', fontWeight: 500 }}
+                            >
+                                Create one
+                            </Typography>
+                        </Typography>
+                    </CardContent>
+                </MotionCard>
+            </Container>
+        </Box>
     );
 }
 

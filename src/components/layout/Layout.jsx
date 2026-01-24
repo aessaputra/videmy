@@ -1,22 +1,29 @@
 import { Outlet } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
 /**
  * Layout Component
  * 
- * Main layout wrapper with Navbar and Footer.
- * Uses React Router's Outlet for nested routes.
+ * MUI-based main layout wrapper with Navbar and Footer.
+ * Uses flexbox for sticky footer behavior.
  */
 export function Layout() {
     return (
-        <div className="layout">
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+            }}
+        >
             <Navbar />
-            <main className="layout__main">
+            <Box component="main" sx={{ flexGrow: 1 }}>
                 <Outlet />
-            </main>
+            </Box>
             <Footer />
-        </div>
+        </Box>
     );
 }
 

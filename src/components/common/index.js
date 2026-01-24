@@ -1,24 +1,11 @@
-export { Button } from './Button';
-export { Input } from './Input';
-export { Card } from './Card';
-export { Loading } from './Loading';
-export { ProtectedRoute, GuestRoute } from './ProtectedRoute';
-export { ThemeToggle } from './ThemeToggle';
+// Common components barrel export
+// Since we migrated to MUI, most common components now use MUI directly
 
-// Animation components (Motion)
-export {
-    AnimatedSection,
-    AnimatedDiv,
-    StaggerContainer,
-    StaggerItem,
-    HoverScale,
-    PageTransition,
-    fadeIn,
-    fadeInUp,
-    fadeInLeft,
-    fadeInRight,
-    scaleIn,
-    staggerContainer,
-    staggerItem,
-    motion
-} from './AnimatedComponents';
+// Route protection
+export { ProtectedRoute, GuestRoute } from './ProtectedRoute';
+
+// Loading component (wrapper around MUI CircularProgress)
+export { Loading } from './Loading';
+
+// Re-export Motion for convenient animation imports
+export { motion } from 'motion/react';

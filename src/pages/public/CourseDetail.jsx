@@ -1,20 +1,48 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { HiPlay, HiUsers, HiClock, HiCheck, HiChevronDown, HiChevronUp } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Typography,
+    Button,
+    Chip,
+    Grid,
+    Card,
+    CardMedia,
+    Avatar,
+    Stack,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+} from '@mui/material';
+import {
+    PlayArrow as PlayIcon,
+    People as PeopleIcon,
+    AccessTime as TimeIcon,
+    ExpandMore as ExpandMoreIcon,
+    CheckCircle as CheckIcon,
+} from '@mui/icons-material';
+import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/common';
+
+// Motion wrapper
+const MotionBox = motion.create(Box);
 
 /**
  * Course Detail Page
  * 
- * Shows course information, curriculum, and enrollment button.
+ * MUI-based page showing course information, curriculum, and enrollment button.
  */
 export function CourseDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
-    const [expandedModules, setExpandedModules] = useState({});
+    const [expanded, setExpanded] = useState('m1');
 
     // Demo course data (will be fetched from Appwrite later)
     const course = {
@@ -64,11 +92,8 @@ export function CourseDetail() {
         ],
     };
 
-    const toggleModule = (moduleId) => {
-        setExpandedModules(prev => ({
-            ...prev,
-            [moduleId]: !prev[moduleId],
-        }));
+    const handleChange = (panel) => (event, isExpanded) => {
+        setExpanded(isExpanded ? panel : false);
     };
 
     const handleEnroll = () => {
@@ -78,7 +103,6 @@ export function CourseDetail() {
             return;
         }
 
-        // TODO: Implement enrollment with Appwrite
         toast.success('Successfully enrolled!');
         navigate(`/learn/${course.id}/${course.modules[0].lessons[0].id}`);
     };
@@ -90,147 +114,172 @@ export function CourseDetail() {
     const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
     return (
-        <div className="py-xl">
-            <div className="container">
+        <Box sx={{ py: { xs: 4, md: 6 } }}>
+            <Container maxWidth="lg">
                 {/* Course Header */}
-                <div className="flex flex-col gap-xl" style={{ marginBottom: 'var(--space-2xl)' }}>
-                    <div style={{ flex: 1 }}>
-                        <span className="badge badge--primary mb-sm">{course.category}</span>
-                        <h1 className="text-3xl font-bold mb-md">{course.title}</h1>
-                        <p className="text-secondary mb-lg" style={{ lineHeight: 'var(--line-height-relaxed)' }}>
-                            {course.description}
-                        </p>
+                <Grid container spacing={4} sx={{ mb: 6 }}>
+                    <Grid size={{ xs: 12, md: 7 }}>
+                        <MotionBox
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <Chip label={course.category} color="primary" sx={{ mb: 2 }} />
 
-                        {/* Course Stats */}
-                        <div className="flex gap-lg flex-wrap mb-lg">
-                            <div className="flex items-center gap-sm text-secondary">
-                                <HiPlay size={18} />
-                                <span>{totalLessons} lessons</span>
-                            </div>
-                            <div className="flex items-center gap-sm text-secondary">
-                                <HiUsers size={18} />
-                                <span>{course.studentsCount.toLocaleString()} students</span>
-                            </div>
-                            <div className="flex items-center gap-sm text-secondary">
-                                <HiClock size={18} />
-                                <span>{course.duration}</span>
-                            </div>
-                        </div>
+                            <Typography variant="h3" fontWeight={700} gutterBottom>
+                                {course.title}
+                            </Typography>
 
-                        {/* Instructor */}
-                        <div className="flex items-center gap-md mb-lg">
-                            <div className="avatar">{course.instructor.avatar}</div>
-                            <div>
-                                <p className="text-sm text-muted">Instructor</p>
-                                <p className="font-medium">{course.instructor.name}</p>
-                            </div>
-                        </div>
+                            <Typography
+                                variant="body1"
+                                color="text.secondary"
+                                sx={{ mb: 3, lineHeight: 1.8 }}
+                            >
+                                {course.description}
+                            </Typography>
 
-                        {/* CTA */}
-                        {course.isEnrolled ? (
-                            <Button variant="primary" size="lg" onClick={handleStartLearning}>
-                                <HiPlay />
-                                Continue Learning
-                            </Button>
-                        ) : (
-                            <Button variant="primary" size="lg" onClick={handleEnroll}>
-                                <HiPlay />
-                                Enroll Now - Free
-                            </Button>
-                        )}
-                    </div>
+                            {/* Course Stats */}
+                            <Stack
+                                direction="row"
+                                spacing={3}
+                                flexWrap="wrap"
+                                useFlexGap
+                                sx={{ mb: 3 }}
+                            >
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <PlayIcon color="action" />
+                                    <Typography variant="body2" color="text.secondary">
+                                        {totalLessons} lessons
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <PeopleIcon color="action" />
+                                    <Typography variant="body2" color="text.secondary">
+                                        {course.studentsCount.toLocaleString()} students
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <TimeIcon color="action" />
+                                    <Typography variant="body2" color="text.secondary">
+                                        {course.duration}
+                                    </Typography>
+                                </Stack>
+                            </Stack>
+
+                            {/* Instructor */}
+                            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
+                                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                                    {course.instructor.avatar}
+                                </Avatar>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Instructor
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight={500}>
+                                        {course.instructor.name}
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
+                            {/* CTA */}
+                            {course.isEnrolled ? (
+                                <Button
+                                    variant="contained"
+                                    size="large"
+                                    onClick={handleStartLearning}
+                                    startIcon={<PlayIcon />}
+                                >
+                                    Continue Learning
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    size="large"
+                                    onClick={handleEnroll}
+                                    startIcon={<PlayIcon />}
+                                >
+                                    Enroll Now - Free
+                                </Button>
+                            )}
+                        </MotionBox>
+                    </Grid>
 
                     {/* Thumbnail */}
-                    <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', aspectRatio: '16/9', maxWidth: '600px' }}>
-                        <img
-                            src={course.thumbnail}
-                            alt={course.title}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                    </div>
-                </div>
+                    <Grid size={{ xs: 12, md: 5 }}>
+                        <MotionBox
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                            <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
+                                <CardMedia
+                                    component="img"
+                                    image={course.thumbnail}
+                                    alt={course.title}
+                                    sx={{ aspectRatio: '16/9' }}
+                                />
+                            </Card>
+                        </MotionBox>
+                    </Grid>
+                </Grid>
 
                 {/* Curriculum */}
-                <div>
-                    <h2 className="text-2xl font-bold mb-lg">Course Curriculum</h2>
+                <Box>
+                    <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
+                        Course Curriculum
+                    </Typography>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                        {course.modules.map((module, index) => (
-                            <div
-                                key={module.id}
-                                className="card"
-                                style={{ padding: 0, overflow: 'hidden' }}
-                            >
-                                {/* Module Header */}
-                                <button
-                                    onClick={() => toggleModule(module.id)}
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: 'var(--space-md) var(--space-lg)',
-                                        background: 'var(--color-bg-tertiary)',
-                                        color: 'var(--color-text-primary)',
-                                        textAlign: 'left',
-                                    }}
-                                >
-                                    <div>
-                                        <span className="text-muted text-sm">Module {index + 1}</span>
-                                        <h3 className="font-semibold">{module.title}</h3>
-                                        <span className="text-sm text-muted">{module.lessons.length} lessons</span>
-                                    </div>
-                                    {expandedModules[module.id] ? (
-                                        <HiChevronUp size={24} />
-                                    ) : (
-                                        <HiChevronDown size={24} />
-                                    )}
-                                </button>
-
-                                {/* Lessons List */}
-                                {expandedModules[module.id] && (
-                                    <div style={{ padding: 'var(--space-sm) 0' }}>
-                                        {module.lessons.map((lesson, lessonIndex) => (
-                                            <div
-                                                key={lesson.id}
-                                                className="flex items-center gap-md"
-                                                style={{
-                                                    padding: 'var(--space-sm) var(--space-lg)',
-                                                    borderBottom: lessonIndex < module.lessons.length - 1 ? '1px solid var(--color-border)' : 'none',
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: 24,
-                                                        height: 24,
-                                                        borderRadius: '50%',
-                                                        background: lesson.completed ? 'var(--color-success)' : 'var(--color-bg-tertiary)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0,
-                                                    }}
-                                                >
-                                                    {lesson.completed ? (
-                                                        <HiCheck size={14} color="white" />
-                                                    ) : (
-                                                        <HiPlay size={12} />
-                                                    )}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <p className="text-sm">{lesson.title}</p>
-                                                </div>
-                                                <span className="text-sm text-muted">{lesson.duration}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
+                    {course.modules.map((module, index) => (
+                        <Accordion
+                            key={module.id}
+                            expanded={expanded === module.id}
+                            onChange={handleChange(module.id)}
+                            sx={{ mb: 1 }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Module {index + 1}
+                                    </Typography>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        {module.title}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {module.lessons.length} lessons
+                                    </Typography>
+                                </Box>
+                            </AccordionSummary>
+                            <AccordionDetails sx={{ p: 0 }}>
+                                <List disablePadding>
+                                    {module.lessons.map((lesson) => (
+                                        <ListItem
+                                            key={lesson.id}
+                                            divider
+                                            sx={{ py: 1.5, px: 3 }}
+                                        >
+                                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                                {lesson.completed ? (
+                                                    <CheckIcon color="success" />
+                                                ) : (
+                                                    <PlayIcon color="action" />
+                                                )}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={lesson.title}
+                                                primaryTypographyProps={{ variant: 'body2' }}
+                                            />
+                                            <Typography variant="caption" color="text.secondary">
+                                                {lesson.duration}
+                                            </Typography>
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </AccordionDetails>
+                        </Accordion>
+                    ))}
+                </Box>
+            </Container>
+        </Box>
     );
 }
 

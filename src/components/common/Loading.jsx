@@ -1,33 +1,39 @@
+import { Box, CircularProgress, Typography } from '@mui/material';
+
 /**
  * Loading Component
  * 
- * Displays a loading spinner. Can be used inline or as full page.
+ * MUI-based loading spinner with optional message.
  * 
  * @param {Object} props
- * @param {boolean} fullPage - Show as full page loader
- * @param {string} message - Optional loading message
+ * @param {string} props.message - Optional loading message
+ * @param {boolean} props.fullScreen - Whether to show fullscreen
  */
-export function Loading({ fullPage = false, message }) {
-    if (fullPage) {
-        return (
-            <div className="loading-screen">
-                <div className="flex flex-col items-center gap-md">
-                    <div className="spinner" />
-                    {message && (
-                        <p className="text-secondary text-sm">{message}</p>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
+export function Loading({ message = 'Loading...', fullScreen = false }) {
     return (
-        <div className="flex items-center justify-center p-lg">
-            <div className="spinner" />
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                p: 4,
+                ...(fullScreen && {
+                    position: 'fixed',
+                    inset: 0,
+                    bgcolor: 'background.default',
+                    zIndex: 9999,
+                }),
+            }}
+        >
+            <CircularProgress color="primary" />
             {message && (
-                <p className="text-secondary text-sm mt-sm">{message}</p>
+                <Typography variant="body2" color="text.secondary">
+                    {message}
+                </Typography>
             )}
-        </div>
+        </Box>
     );
 }
 

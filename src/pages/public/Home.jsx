@@ -1,13 +1,26 @@
 import { Link } from 'react-router-dom';
-import { HiPlay, HiUsers, HiAcademicCap, HiLightningBolt } from 'react-icons/hi';
 import {
+    Box,
+    Container,
+    Typography,
     Button,
-    AnimatedSection,
-    StaggerContainer,
-    StaggerItem,
-    motion
-} from '../../components/common';
+    Grid,
+    Card,
+    CardContent,
+    Stack,
+} from '@mui/material';
+import {
+    PlayArrow as PlayIcon,
+    People as PeopleIcon,
+    School as SchoolIcon,
+    Bolt as BoltIcon,
+} from '@mui/icons-material';
+import { motion } from 'motion/react';
 import { CourseCard } from '../../components/course';
+
+// Motion components
+const MotionBox = motion.create(Box);
+const MotionTypography = motion.create(Typography);
 
 /**
  * Home Page
@@ -48,124 +61,206 @@ export function Home() {
     ];
 
     const stats = [
-        { icon: HiPlay, value: '500+', label: 'Video Lessons' },
-        { icon: HiUsers, value: '10K+', label: 'Students' },
-        { icon: HiAcademicCap, value: '50+', label: 'Courses' },
-        { icon: HiLightningBolt, value: '100%', label: 'Free Access' },
+        { icon: PlayIcon, value: '500+', label: 'Video Lessons' },
+        { icon: PeopleIcon, value: '10K+', label: 'Students' },
+        { icon: SchoolIcon, value: '50+', label: 'Courses' },
+        { icon: BoltIcon, value: '100%', label: 'Free Access' },
     ];
 
     return (
         <>
-            {/* Hero Section - Animated on load */}
-            <section className="hero">
-                <div className="container">
-                    <motion.h1
-                        className="hero__title"
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        Tingkatkan Skill Anda dengan{' '}
-                        <span className="hero__title-gradient">Video Berkualitas</span>
-                    </motion.h1>
-                    <motion.p
-                        className="hero__subtitle"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                        Platform kursus online berbasis video YouTube.
-                        Belajar dari instruktur terbaik, gratis selamanya.
-                    </motion.p>
-                    <motion.div
-                        className="hero__actions"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                    >
-                        <Link to="/courses">
-                            <Button variant="primary" size="lg">
-                                <HiPlay />
-                                Mulai Belajar
-                            </Button>
-                        </Link>
-                        <Link to="/register">
-                            <Button variant="secondary" size="lg">
-                                Daftar Gratis
-                            </Button>
-                        </Link>
-                    </motion.div>
-                </div>
-            </section>
+            {/* Hero Section */}
+            <Box
+                sx={{
+                    py: { xs: 8, md: 12 },
+                    background: (theme) =>
+                        theme.palette.mode === 'dark'
+                            ? 'linear-gradient(180deg, rgba(20, 184, 166, 0.1) 0%, transparent 100%)'
+                            : 'linear-gradient(180deg, rgba(20, 184, 166, 0.05) 0%, transparent 100%)',
+                }}
+            >
+                <Container maxWidth="md">
+                    <Box textAlign="center">
+                        <MotionTypography
+                            variant="h2"
+                            component="h1"
+                            fontWeight={700}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                            sx={{ mb: 2 }}
+                        >
+                            Tingkatkan Skill Anda dengan{' '}
+                            <Typography
+                                component="span"
+                                variant="h2"
+                                fontWeight={700}
+                                color="primary"
+                            >
+                                Video Berkualitas
+                            </Typography>
+                        </MotionTypography>
 
-            {/* Stats Section - Staggered animation on scroll */}
-            <AnimatedSection className="py-2xl">
-                <div className="container">
-                    <StaggerContainer className="dashboard__stats">
+                        <MotionTypography
+                            variant="h6"
+                            color="text.secondary"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
+                        >
+                            Platform kursus online berbasis video YouTube.
+                            Belajar dari instruktur terbaik, gratis selamanya.
+                        </MotionTypography>
+
+                        <MotionBox
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                        >
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={2}
+                                justifyContent="center"
+                            >
+                                <Button
+                                    component={Link}
+                                    to="/courses"
+                                    variant="contained"
+                                    size="large"
+                                    startIcon={<PlayIcon />}
+                                >
+                                    Mulai Belajar
+                                </Button>
+                                <Button
+                                    component={Link}
+                                    to="/register"
+                                    variant="outlined"
+                                    size="large"
+                                    color="primary"
+                                >
+                                    Daftar Gratis
+                                </Button>
+                            </Stack>
+                        </MotionBox>
+                    </Box>
+                </Container>
+            </Box>
+
+            {/* Stats Section */}
+            <Box sx={{ py: 6 }}>
+                <Container maxWidth="lg">
+                    <Grid container spacing={3}>
                         {stats.map((stat, index) => (
-                            <StaggerItem key={index}>
-                                <div className="stat-card">
-                                    <stat.icon size={32} style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }} />
-                                    <div className="stat-card__value">{stat.value}</div>
-                                    <div className="stat-card__label">{stat.label}</div>
-                                </div>
-                            </StaggerItem>
+                            <Grid key={index} size={{ xs: 6, md: 3 }}>
+                                <MotionBox
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.1 }}
+                                >
+                                    <Card
+                                        sx={{
+                                            textAlign: 'center',
+                                            py: 3,
+                                            '&:hover': { transform: 'none' },
+                                        }}
+                                    >
+                                        <CardContent>
+                                            <stat.icon
+                                                sx={{
+                                                    fontSize: 40,
+                                                    color: 'primary.main',
+                                                    mb: 1,
+                                                }}
+                                            />
+                                            <Typography variant="h4" fontWeight={700}>
+                                                {stat.value}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {stat.label}
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </MotionBox>
+                            </Grid>
                         ))}
-                    </StaggerContainer>
-                </div>
-            </AnimatedSection>
+                    </Grid>
+                </Container>
+            </Box>
 
-            {/* Featured Courses - Staggered animation */}
-            <AnimatedSection className="py-2xl" style={{ background: 'var(--color-bg-secondary)' }}>
-                <div className="container">
-                    <div className="mb-xl" style={{ textAlign: 'center' }}>
-                        <h2 className="text-3xl font-bold mb-sm">Featured Courses</h2>
-                        <p className="text-secondary">Kursus populer pilihan kami untuk Anda</p>
-                    </div>
+            {/* Featured Courses Section */}
+            <Box sx={{ py: 8, bgcolor: 'background.default' }}>
+                <Container maxWidth="lg">
+                    <Box textAlign="center" mb={6}>
+                        <Typography variant="h3" fontWeight={700} gutterBottom>
+                            Featured Courses
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            Kursus populer pilihan kami untuk Anda
+                        </Typography>
+                    </Box>
 
-                    <StaggerContainer className="courses-grid">
-                        {featuredCourses.map((course) => (
-                            <StaggerItem key={course.id}>
-                                <CourseCard course={course} />
-                            </StaggerItem>
+                    <Grid container spacing={3}>
+                        {featuredCourses.map((course, index) => (
+                            <Grid key={course.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                                <MotionBox
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.1 }}
+                                >
+                                    <CourseCard course={course} />
+                                </MotionBox>
+                            </Grid>
                         ))}
-                    </StaggerContainer>
+                    </Grid>
 
-                    <motion.div
-                        className="mt-xl"
-                        style={{ textAlign: 'center' }}
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                    <Box textAlign="center" mt={6}>
+                        <Button
+                            component={Link}
+                            to="/courses"
+                            variant="outlined"
+                            size="large"
+                        >
+                            Lihat Semua Kursus
+                        </Button>
+                    </Box>
+                </Container>
+            </Box>
+
+            {/* CTA Section */}
+            <Box sx={{ py: 10 }}>
+                <Container maxWidth="md">
+                    <MotionBox
+                        textAlign="center"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.5 }}
                     >
-                        <Link to="/courses">
-                            <Button variant="secondary" size="lg">
-                                Lihat Semua Kursus
-                            </Button>
-                        </Link>
-                    </motion.div>
-                </div>
-            </AnimatedSection>
-
-            {/* CTA Section - Fade in on scroll */}
-            <AnimatedSection className="py-3xl" delay={0.2}>
-                <div className="container" style={{ textAlign: 'center' }}>
-                    <h2 className="text-3xl font-bold mb-md">
-                        Siap untuk memulai perjalanan belajar Anda?
-                    </h2>
-                    <p className="text-secondary text-lg mb-xl" style={{ maxWidth: '600px', margin: '0 auto var(--space-xl)' }}>
-                        Bergabung dengan ribuan pelajar lainnya dan mulai tingkatkan
-                        skill Anda hari ini. 100% gratis, selamanya.
-                    </p>
-                    <Link to="/register">
-                        <Button variant="primary" size="lg">
-                            <HiAcademicCap />
+                        <Typography variant="h3" fontWeight={700} gutterBottom>
+                            Siap untuk memulai perjalanan belajar Anda?
+                        </Typography>
+                        <Typography
+                            variant="h6"
+                            color="text.secondary"
+                            sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}
+                        >
+                            Bergabung dengan ribuan pelajar lainnya dan mulai tingkatkan
+                            skill Anda hari ini. 100% gratis, selamanya.
+                        </Typography>
+                        <Button
+                            component={Link}
+                            to="/register"
+                            variant="contained"
+                            size="large"
+                            startIcon={<SchoolIcon />}
+                        >
                             Daftar Sekarang
                         </Button>
-                    </Link>
-                </div>
-            </AnimatedSection>
+                    </MotionBox>
+                </Container>
+            </Box>
         </>
     );
 }
