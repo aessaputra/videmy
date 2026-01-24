@@ -221,15 +221,17 @@ let theme = createTheme({
                 root: ({ theme }) => ({
                     boxShadow: 'none',
                     backgroundColor: alpha(
-                        theme.palette.background.default,
-                        0.85
+                        theme.palette.background.paper,
+                        0.9
                     ),
                     backdropFilter: 'blur(20px)',
                     borderBottom: `1px solid ${theme.palette.divider}`,
+                    // Ensure proper text colors in AppBar
+                    color: theme.palette.text.primary,
                 }),
             },
             defaultProps: {
-                color: 'transparent',
+                color: 'default',
             },
         },
         MuiChip: {

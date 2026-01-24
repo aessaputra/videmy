@@ -8,7 +8,7 @@ import {
     IconButton,
     Box,
     Container,
-    Drawer,
+    SwipeableDrawer,
     List,
     ListItem,
     ListItemButton,
@@ -22,6 +22,7 @@ import {
     alpha,
     Menu,
     MenuItem,
+    CardHeader,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -57,9 +58,11 @@ export function Navbar() {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const colorScheme = useColorScheme();
+    const { mode, setMode } = colorScheme;
 
-    // Color scheme for dark/light mode toggle
-    const { mode, setMode } = useColorScheme();
+    // iOS detection for SwipeableDrawer performance optimization
+    const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     // User menu state
     const userMenuOpen = Boolean(anchorEl);
@@ -105,20 +108,38 @@ export function Navbar() {
         return 'Student';
     };
 
-    // Mobile drawer content
+    // Mobile drawer content - Enhanced & Touch-friendly
     const drawer = (
-        <Box sx={{ width: 300, pt: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, mb: 2 }}>
+        <Box
+            sx={{
+                width: 300,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: 'background.paper',
+            }}
+        >
+            {/* Header with Logo */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    px: 2.5,
+                    py: 2,
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Box
                         component="img"
                         src={videmyLogo}
                         alt="Videmy Logo"
                         sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 1,
+                            width: 40,
+                            height: 40,
+                            borderRadius: 1.5,
                             objectFit: 'contain',
                         }}
                     />
@@ -126,129 +147,323 @@ export function Navbar() {
                         Videmy
                     </Typography>
                 </Box>
-                <IconButton onClick={handleDrawerToggle} size="small">
-                    <CloseIcon />
+                <IconButton
+                    onClick={handleDrawerToggle}
+                    size="small"
+                    sx={{
+                        bgcolor: 'action.hover',
+                        '&:hover': { bgcolor: 'action.selected' },
+                    }}
+                >
+                    <CloseIcon fontSize="small" />
                 </IconButton>
             </Box>
-            <Divider />
 
-            {/* User info (if logged in) */}
+            {/* User Profile Section - Clean Design */}
+            {/* User Profile Section - Clean Design with CardHeader */}
             {isAuthenticated && (
-                <Box sx={{ px: 2.5, py: 2, bgcolor: 'action.hover' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44 }}>
-                            {user?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600}>
+                <Box
+                    sx={{
+                        bgcolor: 'action.hover',
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                    }}
+                >
+                    <CardHeader
+                        avatar={
+                            <Avatar
+                                sx={{
+                                    bgcolor: 'primary.main',
+                                    width: 56,
+                                    height: 56,
+                                    fontSize: '1.4rem',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </Avatar>
+                        }
+                        title={
+                            <Typography variant="subtitle1" fontWeight={600} noWrap>
                                 {user?.name || 'User'}
                             </Typography>
-                            <Chip
-                                label={getUserRole()}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                        </Box>
-                    </Box>
+                        }
+                        subheader={
+                            <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    noWrap
+                                    sx={{ display: 'block', mb: 0.5 }}
+                                >
+                                    {user?.email}
+                                </Typography>
+                                <Chip
+                                    label={getUserRole()}
+                                    size="small"
+                                    color="primary"
+                                    variant="outlined"
+                                    sx={{
+                                        height: 22,
+                                        fontSize: '0.7rem',
+                                        fontWeight: 600,
+                                    }}
+                                />
+                            </Box>
+                        }
+                        sx={{ px: 2.5, py: 2.5 }}
+                    />
                 </Box>
             )}
 
-            {/* Navigation */}
-            <List sx={{ flexGrow: 1, px: 1 }}>
-                {navLinks.map((link) => (
-                    <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
-                        <ListItemButton
-                            component={NavLink}
-                            to={link.to}
-                            onClick={handleDrawerToggle}
+            {/* Navigation Sections */}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1 }}>
+                {/* Main Navigation */}
+                <List sx={{ px: 1.5 }}>
+                    <Typography
+                        variant="overline"
+                        color="text.secondary"
+                        sx={{ px: 1.5, py: 1, display: 'block', fontSize: '0.65rem', letterSpacing: 1.5 }}
+                    >
+                        Menu
+                    </Typography>
+                    {navLinks.map((link) => (
+                        <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton
+                                component={NavLink}
+                                to={link.to}
+                                onClick={handleDrawerToggle}
+                                sx={{
+                                    borderRadius: 2,
+                                    minHeight: 48,
+                                    px: 2,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                        transform: 'translateX(4px)',
+                                    },
+                                    '&.active': {
+                                        bgcolor: 'primary.main',
+                                        color: 'primary.contrastText',
+                                        boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                        '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                                    },
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 44 }}>
+                                    <link.icon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={link.label}
+                                    primaryTypographyProps={{ fontWeight: 500 }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    ))}
+                </List>
+
+                {/* Authenticated Navigation */}
+                {isAuthenticated && (
+                    <List sx={{ px: 1.5 }}>
+                        <Typography
+                            variant="overline"
+                            color="text.secondary"
+                            sx={{ px: 1.5, py: 1, display: 'block', fontSize: '0.65rem', letterSpacing: 1.5 }}
+                        >
+                            Dashboard
+                        </Typography>
+                        {authNavLinks
+                            .filter((link) => hasRole(link.roles))
+                            .map((link) => (
+                                <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
+                                    <ListItemButton
+                                        component={NavLink}
+                                        to={link.to}
+                                        onClick={handleDrawerToggle}
+                                        sx={{
+                                            borderRadius: 2,
+                                            minHeight: 48,
+                                            px: 2,
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                                transform: 'translateX(4px)',
+                                            },
+                                            '&.active': {
+                                                bgcolor: 'primary.main',
+                                                color: 'primary.contrastText',
+                                                boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                                '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                                            },
+                                        }}
+                                    >
+                                        <ListItemIcon sx={{ minWidth: 44 }}>
+                                            <link.icon />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={link.label}
+                                            primaryTypographyProps={{ fontWeight: 500 }}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            ))}
+                    </List>
+                )}
+
+                {/* Account Section */}
+                {isAuthenticated && (
+                    <List sx={{ px: 1.5 }}>
+                        <Typography
+                            variant="overline"
+                            color="text.secondary"
+                            sx={{ px: 1.5, py: 1, display: 'block', fontSize: '0.65rem', letterSpacing: 1.5 }}
+                        >
+                            Account
+                        </Typography>
+                        <ListItem disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton
+                                onClick={handleDrawerToggle}
+                                sx={{
+                                    borderRadius: 2,
+                                    minHeight: 48,
+                                    px: 2,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                        transform: 'translateX(4px)',
+                                    },
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 44 }}>
+                                    <PersonIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Profile"
+                                    primaryTypographyProps={{ fontWeight: 500 }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                        <ListItem disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton
+                                onClick={handleDrawerToggle}
+                                sx={{
+                                    borderRadius: 2,
+                                    minHeight: 48,
+                                    px: 2,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: 'action.hover',
+                                        transform: 'translateX(4px)',
+                                    },
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 44 }}>
+                                    <SettingsIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Settings"
+                                    primaryTypographyProps={{ fontWeight: 500 }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    </List>
+                )}
+            </Box>
+
+            {/* Footer - Theme Toggle & Auth Actions */}
+            <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+                {/* Theme Toggle */}
+                <Box
+                    sx={{
+                        px: 2.5,
+                        py: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: 'action.hover',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        {mode === 'dark' ? (
+                            <DarkModeIcon sx={{ color: 'text.secondary' }} />
+                        ) : (
+                            <LightModeIcon sx={{ color: 'warning.main' }} />
+                        )}
+                        <Typography variant="body2" fontWeight={500}>
+                            {mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                        </Typography>
+                    </Box>
+                    <IconButton
+                        onClick={handleThemeToggle}
+                        size="small"
+                        sx={{
+                            bgcolor: 'background.paper',
+                            boxShadow: 1,
+                            '&:hover': { bgcolor: 'background.paper' },
+                        }}
+                    >
+                        {mode === 'dark' ? (
+                            <LightModeIcon fontSize="small" sx={{ color: 'warning.main' }} />
+                        ) : (
+                            <DarkModeIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                        )}
+                    </IconButton>
+                </Box>
+
+                {/* Auth Actions */}
+                <Box sx={{ p: 2 }}>
+                    {!isAuthenticated ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Button
+                                component={NavLink}
+                                to="/login"
+                                variant="outlined"
+                                fullWidth
+                                size="large"
+                                startIcon={<LoginIcon />}
+                                onClick={handleDrawerToggle}
+                                sx={{ borderRadius: 2 }}
+                            >
+                                Sign In
+                            </Button>
+                            <Button
+                                component={NavLink}
+                                to="/register"
+                                variant="contained"
+                                fullWidth
+                                size="large"
+                                startIcon={<PersonAddIcon />}
+                                onClick={handleDrawerToggle}
+                                sx={{
+                                    borderRadius: 2,
+                                    boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                }}
+                            >
+                                Sign Up
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            color="error"
+                            size="large"
+                            startIcon={<LogoutIcon />}
+                            onClick={() => {
+                                handleLogout();
+                                handleDrawerToggle();
+                            }}
                             sx={{
                                 borderRadius: 2,
-                                '&.active': {
-                                    bgcolor: 'primary.main',
-                                    color: 'primary.contrastText',
-                                    '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                                '&:hover': {
+                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
                                 },
                             }}
                         >
-                            <ListItemIcon sx={{ minWidth: 40 }}>
-                                <link.icon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText primary={link.label} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
-
-                {isAuthenticated && <Divider sx={{ my: 1.5 }} />}
-
-                {isAuthenticated &&
-                    authNavLinks
-                        .filter((link) => hasRole(link.roles))
-                        .map((link) => (
-                            <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
-                                <ListItemButton
-                                    component={NavLink}
-                                    to={link.to}
-                                    onClick={handleDrawerToggle}
-                                    sx={{
-                                        borderRadius: 2,
-                                        '&.active': {
-                                            bgcolor: 'primary.main',
-                                            color: 'primary.contrastText',
-                                            '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-                                        },
-                                    }}
-                                >
-                                    <ListItemIcon sx={{ minWidth: 40 }}>
-                                        <link.icon fontSize="small" />
-                                    </ListItemIcon>
-                                    <ListItemText primary={link.label} />
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-            </List>
-
-            {/* Footer Actions */}
-            <Divider />
-            <Box sx={{ p: 2 }}>
-                {!isAuthenticated ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        <Button
-                            component={NavLink}
-                            to="/login"
-                            variant="outlined"
-                            fullWidth
-                            startIcon={<LoginIcon />}
-                            onClick={handleDrawerToggle}
-                        >
-                            Sign In
+                            Sign Out
                         </Button>
-                        <Button
-                            component={NavLink}
-                            to="/register"
-                            variant="contained"
-                            fullWidth
-                            startIcon={<PersonAddIcon />}
-                            onClick={handleDrawerToggle}
-                        >
-                            Sign Up
-                        </Button>
-                    </Box>
-                ) : (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        color="error"
-                        startIcon={<LogoutIcon />}
-                        onClick={() => {
-                            handleLogout();
-                            handleDrawerToggle();
-                        }}
-                    >
-                        Sign Out
-                    </Button>
-                )}
+                    )}
+                </Box>
             </Box>
         </Box>
     );
@@ -361,10 +576,11 @@ export function Navbar() {
 
                         {/* Actions */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {/* Theme Toggle */}
+                            {/* Theme Toggle - Desktop Only (hidden on mobile, available in drawer) */}
                             <IconButton
                                 onClick={handleThemeToggle}
                                 sx={{
+                                    display: { xs: 'none', md: 'flex' },
                                     bgcolor: 'action.hover',
                                     '&:hover': { bgcolor: 'action.selected' },
                                 }}
@@ -378,7 +594,7 @@ export function Navbar() {
 
                             {isAuthenticated ? (
                                 <>
-                                    {/* User Avatar with Dropdown Menu */}
+                                    {/* User Avatar with Dropdown Menu - Desktop Only (md+) */}
                                     <IconButton
                                         onClick={handleUserMenuClick}
                                         size="small"
@@ -386,9 +602,11 @@ export function Navbar() {
                                         aria-haspopup="true"
                                         aria-expanded={userMenuOpen ? 'true' : undefined}
                                         sx={{
+                                            display: { xs: 'none', md: 'flex' },
                                             p: 0.5,
                                             border: userMenuOpen ? 2 : 0,
                                             borderColor: 'primary.main',
+                                            transition: 'border 0.2s ease',
                                         }}
                                     >
                                         <Avatar
@@ -404,7 +622,7 @@ export function Navbar() {
                                         </Avatar>
                                     </IconButton>
 
-                                    {/* User Dropdown Menu */}
+                                    {/* User Dropdown Menu - Desktop Only */}
                                     <Menu
                                         id="user-menu"
                                         anchorEl={anchorEl}
@@ -420,7 +638,7 @@ export function Navbar() {
                                                     overflow: 'visible',
                                                     filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
                                                     mt: 1.5,
-                                                    minWidth: 200,
+                                                    minWidth: 240,
                                                     borderRadius: 2,
                                                     '&::before': {
                                                         content: '""',
@@ -438,12 +656,22 @@ export function Navbar() {
                                             },
                                         }}
                                     >
-                                        {/* User Info Header */}
+                                        {/* User Info Header - Desktop Only */}
                                         <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
                                             <Typography variant="subtitle2" fontWeight={600}>
                                                 {user?.name || 'User'}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{
+                                                    display: 'block',
+                                                    maxWidth: 180,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
                                                 {user?.email}
                                             </Typography>
                                         </Box>
@@ -546,23 +774,34 @@ export function Navbar() {
                 </Container>
             </AppBar>
 
-            {/* Mobile Drawer */}
-            <Drawer
+            {/* Mobile Drawer - SwipeableDrawer for gesture support */}
+            <SwipeableDrawer
                 variant="temporary"
                 anchor="right"
                 open={mobileOpen}
                 onClose={handleDrawerToggle}
-                ModalProps={{ keepMounted: true }}
+                onOpen={() => setMobileOpen(true)}
+                disableBackdropTransition={!iOS}
+                disableDiscovery={iOS}
+                swipeAreaWidth={20}
+                ModalProps={{
+                    keepMounted: true,
+                }}
                 sx={{
                     display: { xs: 'block', md: 'none' },
                     '& .MuiDrawer-paper': {
                         width: 300,
-                        borderRadius: '16px 0 0 16px',
+                        borderRadius: '20px 0 0 20px',
+                        boxShadow: '-8px 0 30px rgba(0,0,0,0.15)',
+                    },
+                    '& .MuiBackdrop-root': {
+                        backdropFilter: 'blur(4px)',
+                        backgroundColor: 'rgba(0,0,0,0.3)',
                     },
                 }}
             >
                 {drawer}
-            </Drawer>
+            </SwipeableDrawer>
         </>
     );
 }

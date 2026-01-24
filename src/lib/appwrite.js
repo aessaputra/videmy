@@ -8,7 +8,7 @@ import { Client, Account, Databases, Storage, ID, Query } from 'appwrite';
  */
 
 // Initialize the Appwrite client
-const client = new Client();
+export const client = new Client();
 
 client
     .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')

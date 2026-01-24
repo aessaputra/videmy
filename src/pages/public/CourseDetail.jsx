@@ -28,7 +28,9 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
+import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 // Motion wrapper
 const MotionBox = motion.create(Box);
@@ -44,53 +46,106 @@ export function CourseDetail() {
     const { isAuthenticated } = useAuth();
     const [expanded, setExpanded] = useState('m1');
 
-    // Demo course data (will be fetched from Appwrite later)
-    const course = {
-        id,
-        title: 'Complete Web Development Bootcamp',
-        description: 'Pelajari web development dari dasar hingga mahir. Kursus ini mencakup HTML, CSS, JavaScript, React, Node.js, dan database. Anda akan membangun beberapa proyek nyata dan siap untuk karir sebagai web developer.',
-        category: 'Web Development',
-        thumbnail: 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200',
-        instructor: {
-            name: 'John Doe',
-            avatar: 'JD',
-        },
-        lessonsCount: 120,
-        studentsCount: 2500,
-        duration: '40 hours',
-        isEnrolled: false,
-        modules: [
-            {
-                id: 'm1',
-                title: 'Introduction to Web Development',
-                lessons: [
-                    { id: 'l1', title: 'What is Web Development?', duration: '10:00', completed: false },
-                    { id: 'l2', title: 'Setting Up Your Environment', duration: '15:00', completed: false },
-                    { id: 'l3', title: 'Course Overview', duration: '5:00', completed: false },
-                ],
-            },
-            {
-                id: 'm2',
-                title: 'HTML Fundamentals',
-                lessons: [
-                    { id: 'l4', title: 'HTML Structure & Syntax', duration: '20:00', completed: false },
-                    { id: 'l5', title: 'Working with Text', duration: '15:00', completed: false },
-                    { id: 'l6', title: 'Links and Images', duration: '18:00', completed: false },
-                    { id: 'l7', title: 'Forms and Inputs', duration: '25:00', completed: false },
-                ],
-            },
-            {
-                id: 'm3',
-                title: 'CSS Styling',
-                lessons: [
-                    { id: 'l8', title: 'CSS Basics', duration: '20:00', completed: false },
-                    { id: 'l9', title: 'Flexbox Layout', duration: '30:00', completed: false },
-                    { id: 'l10', title: 'CSS Grid', duration: '25:00', completed: false },
-                    { id: 'l11', title: 'Responsive Design', duration: '35:00', completed: false },
-                ],
-            },
-        ],
-    };
+    // State
+    const [course, setCourse] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCourseData = async () => {
+            try {
+                if (!id) return;
+
+                // 1. Fetch Course
+                const courseDoc = await databases.getDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    id
+                );
+
+                // 2. Fetch Modules
+                const modulesRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.MODULES,
+                    [
+                        Query.equal('courseId', id),
+                        Query.orderAsc('order')
+                    ]
+                );
+
+                // 3. Fetch Lessons
+                const moduleIds = modulesRes.documents.map(m => m.$id);
+                let allLessons = [];
+
+                if (moduleIds.length > 0) {
+                    // Appwrite limits Query.equal array size, but for a course < 100 modules it's fine
+                    const lessonsRes = await databases.listDocuments(
+                        DATABASE_ID,
+                        COLLECTIONS.LESSONS,
+                        [
+                            Query.equal('moduleId', moduleIds),
+                            Query.orderAsc('order')
+                        ]
+                    );
+                    allLessons = lessonsRes.documents;
+                }
+
+                // Stitch structure
+                const fullModules = modulesRes.documents.map(m => ({
+                    id: m.$id,
+                    title: m.title,
+                    lessons: allLessons
+                        .filter(l => l.moduleId === m.$id)
+                        .map(l => ({
+                            id: l.$id,
+                            title: l.title,
+                            duration: l.duration ? `${l.duration}m` : 'Video',
+                            completed: false
+                        }))
+                }));
+
+                setCourse({
+                    id: courseDoc.$id,
+                    title: courseDoc.title,
+                    description: courseDoc.description,
+                    category: courseDoc.category || 'General',
+                    thumbnail: courseDoc.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200',
+                    instructor: {
+                        name: 'Videmy Instructor',
+                        avatar: 'VI',
+                    },
+                    lessonsCount: allLessons.length,
+                    studentsCount: courseDoc.studentsCount || 0,
+                    duration: 'Self-paced',
+                    isEnrolled: false, // TODO: Check enrollment
+                    modules: fullModules,
+                });
+
+            } catch (error) {
+                console.error('Failed to load course:', error);
+                toast.error('Could not load course details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourseData();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!course) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                <Typography>Course not found</Typography>
+            </Box>
+        );
+    }
 
     const handleChange = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);

@@ -13,6 +13,8 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { motion as MotionLibrary } from 'motion/react';
 import { CourseCard } from '../../components/course';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
+import toast from 'react-hot-toast';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 // Motion wrapper
 const MotionBox = MotionLibrary.create(Box);
@@ -24,79 +26,62 @@ const MotionBox = MotionLibrary.create(Box);
  * Uses auto-animate for smooth list transitions.
  */
 export function Courses() {
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [animateRef] = useAutoAnimate();
 
-    // Demo courses (will be fetched from Appwrite later)
-    const allCourses = [
-        {
-            id: '1',
-            title: 'Complete Web Development Bootcamp',
-            description: 'Belajar HTML, CSS, JavaScript, React, dan Node.js dari nol hingga mahir.',
-            category: 'Web Development',
-            thumbnail: 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800',
-            lessonsCount: 120,
-            studentsCount: 2500,
-        },
-        {
-            id: '2',
-            title: 'UI/UX Design Masterclass',
-            description: 'Kuasai prinsip desain dan tools seperti Figma untuk karir desainer.',
-            category: 'Design',
-            thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800',
-            lessonsCount: 85,
-            studentsCount: 1800,
-        },
-        {
-            id: '3',
-            title: 'Python for Data Science',
-            description: 'Pelajari Python, Pandas, dan Machine Learning untuk analisis data.',
-            category: 'Data Science',
-            thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800',
-            lessonsCount: 95,
-            studentsCount: 3200,
-        },
-        {
-            id: '4',
-            title: 'Mobile App Development with React Native',
-            description: 'Bangun aplikasi mobile cross-platform dengan React Native.',
-            category: 'Mobile Development',
-            thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800',
-            lessonsCount: 78,
-            studentsCount: 1500,
-        },
-        {
-            id: '5',
-            title: 'Digital Marketing Complete Guide',
-            description: 'Strategi pemasaran digital dari SEO hingga Social Media Marketing.',
-            category: 'Marketing',
-            thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
-            lessonsCount: 65,
-            studentsCount: 2100,
-        },
-        {
-            id: '6',
-            title: 'Advanced JavaScript Patterns',
-            description: 'Design patterns dan praktik terbaik untuk JavaScript modern.',
-            category: 'Web Development',
-            thumbnail: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800',
-            lessonsCount: 45,
-            studentsCount: 980,
-        },
-    ];
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const response = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    [
+                        Query.orderDesc('$createdAt'),
+                    ]
+                );
+
+                // Map Appwrite documents to our course format
+                const mappedCourses = response.documents.map(doc => ({
+                    id: doc.$id,
+                    title: doc.title,
+                    description: doc.description,
+                    category: doc.category || 'General',
+                    thumbnail: doc.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800',
+                    lessonsCount: doc.lessonsCount || 0,
+                    studentsCount: doc.studentsCount || 0,
+                    price: doc.price || 0,
+                    instructor: doc.instructorId
+                }));
+
+                setCourses(mappedCourses);
+            } catch (error) {
+                console.error('Failed to fetch courses:', error);
+                toast.error('Failed to load courses');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourses();
+    }, []);
 
     // Get unique categories
-    const categories = ['All', ...new Set(allCourses.map((c) => c.category))];
+    const categories = useMemo(() => {
+        return ['All', ...new Set(courses.map((c) => c.category))];
+    }, [courses]);
 
     // Filter courses based on search and category
     const filteredCourses = useMemo(() => {
-        return allCourses.filter((course) => {
+        return courses.filter((course) => {
             const matchesSearch =
                 course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 course.description.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory =
                 selectedCategory === 'All' || course.category === selectedCategory;
+            selectedCategory === 'All' || course.category === selectedCategory;
             return matchesSearch && matchesCategory;
         });
     }, [searchQuery, selectedCategory]);

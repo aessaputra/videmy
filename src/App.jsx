@@ -21,6 +21,9 @@ import { Dashboard, Learn } from './pages/student';
 // Admin Pages
 import { ManageCourses, ManageUsers } from './pages/admin';
 
+// Debug
+import { ConnectionStatus } from './components/debug';
+
 // Create React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +111,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Debug Route - Temporary */}
+              <Route path="/debug" element={<ConnectionStatus />} />
 
               {/* 404 Not Found */}
               <Route
