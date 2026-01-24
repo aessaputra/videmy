@@ -8,29 +8,59 @@ import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
 // Create base theme with color schemes for dark/light mode
 let theme = createTheme({
-    // Enable both light and dark color schemes
+    // Enable both light and dark color schemes with custom palettes
     colorSchemes: {
-        light: true,
-        dark: true,
+        light: {
+            palette: {
+                primary: {
+                    main: '#14b8a6',      // Teal
+                    light: '#2dd4bf',
+                    dark: '#0d9488',
+                    contrastText: '#ffffff',
+                },
+                secondary: {
+                    main: '#f59e0b',      // Gold/Amber
+                    light: '#fbbf24',
+                    dark: '#d97706',
+                    contrastText: '#000000',
+                },
+                background: {
+                    default: '#f8fafc',
+                    paper: '#ffffff',
+                },
+            },
+        },
+        dark: {
+            palette: {
+                primary: {
+                    main: '#2dd4bf',      // Lighter teal for dark mode
+                    light: '#5eead4',
+                    dark: '#14b8a6',
+                    contrastText: '#000000',
+                },
+                secondary: {
+                    main: '#fbbf24',      // Lighter gold for dark mode
+                    light: '#fcd34d',
+                    dark: '#f59e0b',
+                    contrastText: '#000000',
+                },
+                background: {
+                    default: '#0f172a',   // Dark slate background
+                    paper: '#1e293b',     // Slightly lighter for cards/paper
+                },
+                text: {
+                    primary: '#f1f5f9',
+                    secondary: '#94a3b8',
+                },
+            },
+        },
     },
     cssVariables: {
         colorSchemeSelector: 'class',
     },
 
-    // Color palette
+    // Shared palette colors (info, success, warning, error)
     palette: {
-        primary: {
-            main: '#14b8a6',      // Teal
-            light: '#2dd4bf',
-            dark: '#0d9488',
-            contrastText: '#ffffff',
-        },
-        secondary: {
-            main: '#f59e0b',      // Gold/Amber
-            light: '#fbbf24',
-            dark: '#d97706',
-            contrastText: '#000000',
-        },
         info: {
             main: '#22d3ee',      // Light Teal/Cyan (accent)
             light: '#67e8f9',
@@ -50,10 +80,6 @@ let theme = createTheme({
             main: '#ef4444',
             light: '#f87171',
             dark: '#dc2626',
-        },
-        background: {
-            default: '#f8fafc',
-            paper: '#ffffff',
         },
     },
 
