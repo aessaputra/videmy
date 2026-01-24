@@ -20,6 +20,8 @@ import {
     useMediaQuery,
     Chip,
     alpha,
+    Menu,
+    MenuItem,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -35,6 +37,8 @@ import {
     PlayCircle as PlayCircleIcon,
     AdminPanelSettings as AdminIcon,
     People as PeopleIcon,
+    Person as PersonIcon,
+    Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '@mui/material/styles';
@@ -42,11 +46,12 @@ import { useColorScheme } from '@mui/material/styles';
 /**
  * Navbar Component
  * 
- * Enhanced MUI AppBar with glassmorphism effect, 
- * improved styling, and responsive mobile drawer.
+ * MUI AppBar with glassmorphism effect and user dropdown menu.
+ * Follows MUI best practices for Menu component.
  */
 export function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
     const { user, isAuthenticated, logout, hasRole, ROLES } = useAuth();
     const navigate = useNavigate();
     const theme = useTheme();
@@ -55,7 +60,19 @@ export function Navbar() {
     // Color scheme for dark/light mode toggle
     const { mode, setMode } = useColorScheme();
 
+    // User menu state
+    const userMenuOpen = Boolean(anchorEl);
+
+    const handleUserMenuClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleUserMenuClose = () => {
+        setAnchorEl(null);
+    };
+
     const handleLogout = async () => {
+        handleUserMenuClose();
         await logout();
         navigate('/');
     };
@@ -79,6 +96,13 @@ export function Navbar() {
         { to: '/admin/courses', label: 'Manage Courses', icon: AdminIcon, roles: [ROLES.INSTRUCTOR, ROLES.ADMIN] },
         { to: '/admin/users', label: 'Users', icon: PeopleIcon, roles: [ROLES.ADMIN] },
     ];
+
+    // Get user role display name
+    const getUserRole = () => {
+        if (user?.labels?.includes(ROLES.ADMIN)) return 'Admin';
+        if (user?.labels?.includes(ROLES.INSTRUCTOR)) return 'Instructor';
+        return 'Student';
+    };
 
     // Mobile drawer content
     const drawer = (
@@ -121,7 +145,7 @@ export function Navbar() {
                                 {user?.name || 'User'}
                             </Typography>
                             <Chip
-                                label={user?.labels?.includes(ROLES.ADMIN) ? 'Admin' : user?.labels?.includes(ROLES.INSTRUCTOR) ? 'Instructor' : 'Student'}
+                                label={getUserRole()}
                                 size="small"
                                 color="primary"
                                 variant="outlined"
@@ -273,12 +297,9 @@ export function Navbar() {
                             <Typography
                                 variant="h5"
                                 component="span"
+                                color="primary"
                                 sx={{
                                     fontWeight: 800,
-                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                    backgroundClip: 'text',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
                                     display: { xs: 'none', sm: 'block' },
                                 }}
                             >
@@ -367,39 +388,120 @@ export function Navbar() {
 
                             {isAuthenticated ? (
                                 <>
-                                    <Avatar
+                                    {/* User Avatar with Dropdown Menu */}
+                                    <IconButton
+                                        onClick={handleUserMenuClick}
+                                        size="small"
+                                        aria-controls={userMenuOpen ? 'user-menu' : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={userMenuOpen ? 'true' : undefined}
                                         sx={{
-                                            bgcolor: 'primary.main',
-                                            width: 38,
-                                            height: 38,
-                                            display: { xs: 'none', sm: 'flex' },
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s ease',
-                                            '&:hover': { transform: 'scale(1.05)' },
+                                            p: 0.5,
+                                            border: userMenuOpen ? 2 : 0,
+                                            borderColor: 'primary.main',
                                         }}
                                     >
-                                        {user?.name?.charAt(0).toUpperCase()}
-                                    </Avatar>
-                                    <Button
-                                        onClick={handleLogout}
-                                        variant="outlined"
-                                        color="inherit"
-                                        size="small"
-                                        startIcon={<LogoutIcon />}
-                                        sx={{
-                                            display: { xs: 'none', md: 'flex' },
-                                            borderColor: 'divider',
-                                            color: 'text.secondary',
-                                            '&:hover': {
-                                                borderColor: 'error.main',
-                                                color: 'error.main',
-                                                bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+                                        <Avatar
+                                            sx={{
+                                                bgcolor: 'primary.main',
+                                                width: 36,
+                                                height: 36,
+                                                fontWeight: 600,
+                                                fontSize: '0.95rem',
+                                            }}
+                                        >
+                                            {user?.name?.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                    </IconButton>
+
+                                    {/* User Dropdown Menu */}
+                                    <Menu
+                                        id="user-menu"
+                                        anchorEl={anchorEl}
+                                        open={userMenuOpen}
+                                        onClose={handleUserMenuClose}
+                                        onClick={handleUserMenuClose}
+                                        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                                        slotProps={{
+                                            paper: {
+                                                elevation: 0,
+                                                sx: {
+                                                    overflow: 'visible',
+                                                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+                                                    mt: 1.5,
+                                                    minWidth: 200,
+                                                    borderRadius: 2,
+                                                    '&::before': {
+                                                        content: '""',
+                                                        display: 'block',
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        right: 14,
+                                                        width: 10,
+                                                        height: 10,
+                                                        bgcolor: 'background.paper',
+                                                        transform: 'translateY(-50%) rotate(45deg)',
+                                                        zIndex: 0,
+                                                    },
+                                                },
                                             },
                                         }}
                                     >
-                                        Sign Out
-                                    </Button>
+                                        {/* User Info Header */}
+                                        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+                                            <Typography variant="subtitle2" fontWeight={600}>
+                                                {user?.name || 'User'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {user?.email}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Menu Items */}
+                                        <MenuItem
+                                            component={Link}
+                                            to="/dashboard"
+                                            sx={{ py: 1.5 }}
+                                        >
+                                            <ListItemIcon>
+                                                <DashboardIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            Dashboard
+                                        </MenuItem>
+
+                                        <MenuItem sx={{ py: 1.5 }}>
+                                            <ListItemIcon>
+                                                <PersonIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            Profile
+                                        </MenuItem>
+
+                                        <MenuItem sx={{ py: 1.5 }}>
+                                            <ListItemIcon>
+                                                <SettingsIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            Settings
+                                        </MenuItem>
+
+                                        <Divider />
+
+                                        <MenuItem
+                                            onClick={handleLogout}
+                                            sx={{
+                                                py: 1.5,
+                                                color: 'error.main',
+                                                '&:hover': {
+                                                    bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+                                                },
+                                            }}
+                                        >
+                                            <ListItemIcon>
+                                                <LogoutIcon fontSize="small" color="error" />
+                                            </ListItemIcon>
+                                            Sign Out
+                                        </MenuItem>
+                                    </Menu>
                                 </>
                             ) : (
                                 <>
