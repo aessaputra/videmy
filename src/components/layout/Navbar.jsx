@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useColorScheme } from '@mui/material/styles';
+import videmyLogo from '../../assets/videmy-logo.png';
 
 /**
  * Navbar Component
@@ -111,18 +112,16 @@ export function Navbar() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2.5, mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Box
+                        component="img"
+                        src={videmyLogo}
+                        alt="Videmy Logo"
                         sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 2,
-                            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            width: 36,
+                            height: 36,
+                            borderRadius: 1,
+                            objectFit: 'contain',
                         }}
-                    >
-                        <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
-                    </Box>
+                    />
                     <Typography variant="h6" fontWeight={700} color="primary">
                         Videmy
                     </Typography>
@@ -281,19 +280,16 @@ export function Navbar() {
                             }}
                         >
                             <Box
+                                component="img"
+                                src={videmyLogo}
+                                alt="Videmy Logo"
                                 sx={{
                                     width: 40,
                                     height: 40,
-                                    borderRadius: 2,
-                                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                    borderRadius: 1.5,
+                                    objectFit: 'contain',
                                 }}
-                            >
-                                <SchoolIcon sx={{ color: 'white', fontSize: 24 }} />
-                            </Box>
+                            />
                             <Typography
                                 variant="h5"
                                 component="span"
