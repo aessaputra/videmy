@@ -19,7 +19,7 @@ import { Home, Login, Register, Courses, CourseDetail } from './pages/public';
 import { Dashboard, Learn } from './pages/student';
 
 // Admin Pages
-import { ManageCourses, ManageUsers } from './pages/admin';
+import { ManageCourses, ManageUsers, CreateCourse, EditCourse } from './pages/admin';
 
 // Debug
 import { ConnectionStatus } from './components/debug';
@@ -87,6 +87,22 @@ function App() {
                   element={
                     <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
                       <ManageCourses />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/courses/new"
+                  element={
+                    <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
+                      <CreateCourse />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/courses/:id/edit"
+                  element={
+                    <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
+                      <EditCourse />
                     </ProtectedRoute>
                   }
                 />

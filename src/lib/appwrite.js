@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID, Query } from 'appwrite';
+import { Client, Account, Databases, Storage, ID, Query, Permission, Role } from 'appwrite';
 
 /**
  * Appwrite Client Configuration
@@ -20,7 +20,7 @@ export const databases = new Databases(client);
 export const storage = new Storage(client);
 
 // Export utilities
-export { ID, Query };
+export { ID, Query, Permission, Role };
 
 // Database constants
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';

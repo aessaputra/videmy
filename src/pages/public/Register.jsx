@@ -10,6 +10,7 @@ import {
     Button,
     InputAdornment,
     IconButton,
+    MenuItem,
 } from '@mui/material';
 import {
     Email as EmailIcon,
@@ -37,6 +38,7 @@ export function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [role, setRole] = useState(ROLES.STUDENT);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -88,7 +90,7 @@ export function Register() {
 
         setLoading(true);
 
-        const result = await register(email, password, name, ROLES.STUDENT);
+        const result = await register(email, password, name, role);
 
         if (result.success) {
             toast.success('Account created successfully!');
@@ -218,6 +220,18 @@ export function Register() {
                                 }}
                                 sx={{ mb: 2 }}
                             />
+
+                            <TextField
+                                select
+                                fullWidth
+                                label="I am a"
+                                value={role}
+                                onChange={(e) => setRole(e.target.value)}
+                                sx={{ mb: 2 }}
+                            >
+                                <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
+                                <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
+                            </TextField>
 
                             <TextField
                                 fullWidth

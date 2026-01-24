@@ -30,7 +30,7 @@ import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
 import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
+import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
 
 // Motion wrapper
 const MotionBox = motion.create(Box);
@@ -147,23 +147,72 @@ export function CourseDetail() {
         );
     }
 
-    const handleChange = (panel) => (event, isExpanded) => {
-        setExpanded(isExpanded ? panel : false);
-    };
+    // Check enrollment status
+    useEffect(() => {
+        const checkEnrollment = async () => {
+            if (!isAuthenticated || !course || !user) return;
 
-    const handleEnroll = () => {
+            try {
+                const response = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.ENROLLMENTS,
+                    [
+                        Query.equal('userId', user.$id),
+                        Query.equal('courseId', course.id)
+                    ]
+                );
+
+                if (response.documents.length > 0) {
+                    setCourse(prev => ({ ...prev, isEnrolled: true }));
+                }
+            } catch (error) {
+                console.error('Failed to check enrollment:', error);
+            }
+        };
+
+        checkEnrollment();
+    }, [course?.id, user?.$id, isAuthenticated]);
+
+    const handleEnroll = async () => {
         if (!isAuthenticated) {
             toast.error('Please login to enroll in this course');
             navigate('/login');
             return;
         }
 
-        toast.success('Successfully enrolled!');
-        navigate(`/learn/${course.id}/${course.modules[0].lessons[0].id}`);
+        try {
+            // Double check enrollment
+            if (course.isEnrolled) {
+                return handleStartLearning();
+            }
+
+            const enrollment = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.ENROLLMENTS,
+                ID.unique(),
+                {
+                    userId: user.$id,
+                    courseId: course.id,
+                    enrolledAt: new Date().toISOString()
+                }
+            );
+
+            setCourse(prev => ({ ...prev, isEnrolled: true }));
+            toast.success('Successfully enrolled!');
+            handleStartLearning();
+
+        } catch (error) {
+            console.error('Enrollment failed:', error);
+            toast.error('Failed to enroll. Please try again.');
+        }
     };
 
     const handleStartLearning = () => {
-        navigate(`/learn/${course.id}/${course.modules[0].lessons[0].id}`);
+        if (course?.modules?.[0]?.lessons?.[0]) {
+            navigate(`/learn/${course.id}/${course.modules[0].lessons[0].id}`);
+        } else {
+            toast.error('Course has no lessons yet.');
+        }
     };
 
     const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);

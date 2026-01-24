@@ -19,7 +19,9 @@ import {
     AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import { motion as MotionLibrary } from 'motion/react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 // Motion wrapper
 const MotionBox = MotionLibrary.create(Box);
@@ -32,55 +34,125 @@ const MotionCard = MotionLibrary.create(Card);
  */
 export function Dashboard() {
     const { user, hasRole, ROLES } = useAuth();
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState([
+        { label: 'Enrolled Courses', value: 0, icon: SchoolIcon, color: 'primary.main' },
+        { label: 'Completed Lessons', value: 0, icon: CheckIcon, color: 'success.main' },
+        { label: 'Hours Learned', value: '0', icon: TimeIcon, color: 'warning.main' }, // Placeholder
+        { label: 'Avg Progress', value: '0%', icon: PlayIcon, color: 'info.main' },
+    ]);
 
-    // Demo enrolled courses (will be fetched from Appwrite later)
-    const enrolledCourses = [
-        {
-            id: '1',
-            title: 'Complete Web Development Bootcamp',
-            thumbnail: 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800',
-            progress: 35,
-            completedLessons: 42,
-            totalLessons: 120,
-            lastLesson: { id: 'l5', title: 'Working with Text' },
-        },
-        {
-            id: '2',
-            title: 'UI/UX Design Masterclass',
-            thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800',
-            progress: 15,
-            completedLessons: 13,
-            totalLessons: 85,
-            lastLesson: { id: 'l4', title: 'Color Theory' },
-        },
-    ];
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            if (!user) return;
+            try {
+                // 1. Fetch Enrollments
+                const enrollRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.ENROLLMENTS,
+                    [Query.equal('userId', user.$id)]
+                );
 
-    const stats = [
-        {
-            label: 'Enrolled Courses',
-            value: enrolledCourses.length,
-            icon: SchoolIcon,
-            color: 'primary.main',
-        },
-        {
-            label: 'Completed Lessons',
-            value: enrolledCourses.reduce((acc, c) => acc + c.completedLessons, 0),
-            icon: CheckIcon,
-            color: 'success.main',
-        },
-        {
-            label: 'Hours Learned',
-            value: '12.5',
-            icon: TimeIcon,
-            color: 'warning.main',
-        },
-        {
-            label: 'Avg Progress',
-            value: `${Math.round(enrolledCourses.reduce((acc, c) => acc + c.progress, 0) / enrolledCourses.length || 0)}%`,
-            icon: PlayIcon,
-            color: 'info.main',
-        },
-    ];
+                if (enrollRes.documents.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+
+                const courseIds = enrollRes.documents.map(e => e.courseId);
+
+                // 2. Fetch Courses
+                const coursesRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    [Query.equal('$id', courseIds)]
+                );
+
+                // 3. Fetch Modules (to get lessons)
+                const modulesRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.MODULES,
+                    [Query.equal('courseId', courseIds)]
+                );
+
+                // 4. Fetch Lessons
+                const moduleIds = modulesRes.documents.map(m => m.$id);
+                // Note: If too many modules, this might hit query limit. Splitting is better in prod.
+                const lessonsRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.LESSONS,
+                    [
+                        Query.equal('moduleId', moduleIds),
+                        Query.limit(100) // Max limit might need pagination loop for real app
+                    ]
+                );
+                const allLessons = lessonsRes.documents;
+
+                // 5. Fetch User Progress
+                const progressRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.PROGRESS,
+                    [Query.equal('userId', user.$id)]
+                );
+                const completedLessonIds = progressRes.documents.map(p => p.lessonId);
+
+                // 6. Calculate Stats & Map Data
+                const mappedCourses = coursesRes.documents.map(course => {
+                    // Find lessons for this course
+                    const courseModuleIds = modulesRes.documents
+                        .filter(m => m.courseId === course.$id)
+                        .map(m => m.$id);
+
+                    const courseLessons = allLessons
+                        .filter(l => courseModuleIds.includes(l.moduleId));
+
+                    const completedCount = courseLessons
+                        .filter(l => completedLessonIds.includes(l.$id))
+                        .length;
+
+                    const totalLessons = courseLessons.length || course.lessonsCount || 0;
+                    const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+                    // Find last active lesson or first lesson
+                    // Simple logic: First incomplete lesson
+                    const firstIncomplete = courseLessons.find(l => !completedLessonIds.includes(l.$id));
+                    const lastLesson = firstIncomplete || courseLessons[0] || { id: null, title: 'No lessons' };
+
+                    return {
+                        id: course.$id,
+                        title: course.title,
+                        thumbnail: course.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800',
+                        progress,
+                        completedLessons: completedCount,
+                        totalLessons,
+                        lastLesson: { id: lastLesson.$id || lastLesson.id, title: lastLesson.title }
+                    };
+                });
+
+                setEnrolledCourses(mappedCourses);
+
+                // Update Stats
+                const totalCompleted = completedLessonIds.length;
+                const avgProgress = mappedCourses.length > 0
+                    ? Math.round(mappedCourses.reduce((acc, c) => acc + c.progress, 0) / mappedCourses.length)
+                    : 0;
+
+                setStats([
+                    { label: 'Enrolled Courses', value: mappedCourses.length, icon: SchoolIcon, color: 'primary.main' },
+                    { label: 'Completed Lessons', value: totalCompleted, icon: CheckIcon, color: 'success.main' },
+                    { label: 'Hours Learned', value: '12+', icon: TimeIcon, color: 'warning.main' },
+                    { label: 'Avg Progress', value: `${avgProgress}%`, icon: PlayIcon, color: 'info.main' },
+                ]);
+
+            } catch (error) {
+                console.error('Dashboard load failed:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [user]);
 
     return (
         <Box sx={{ py: { xs: 4, md: 6 } }}>

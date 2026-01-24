@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Box,
@@ -17,6 +17,7 @@ import {
     Paper,
     Chip,
     Stack,
+    CircularProgress,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -28,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 /**
  * Manage Courses Page (Admin/Instructor)
@@ -39,53 +41,90 @@ export function ManageCourses() {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Demo courses (will be fetched from Appwrite later)
-    const [courses, setCourses] = useState([
-        {
-            id: '1',
-            title: 'Complete Web Development Bootcamp',
-            category: 'Web Development',
-            lessonsCount: 120,
-            studentsCount: 2500,
-            isPublished: true,
-            instructorId: user?.$id,
-        },
-        {
-            id: '2',
-            title: 'UI/UX Design Masterclass',
-            category: 'Design',
-            lessonsCount: 85,
-            studentsCount: 1800,
-            isPublished: true,
-            instructorId: user?.$id,
-        },
-        {
-            id: '3',
-            title: 'Python for Data Science',
-            category: 'Data Science',
-            lessonsCount: 95,
-            studentsCount: 3200,
-            isPublished: false,
-            instructorId: user?.$id,
-        },
-    ]);
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user && hasRole(ROLES.INSTRUCTOR)) {
+            fetchCourses();
+        }
+    }, [user]);
+
+    const fetchCourses = async () => {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.COURSES,
+                [
+                    Query.equal('instructorId', user.$id),
+                    Query.orderDesc('$createdAt')
+                ]
+            );
+
+            // Map Appwrite documents to local state format
+            const mappedCourses = response.documents.map(doc => ({
+                id: doc.$id,
+                title: doc.title,
+                category: doc.category || 'Uncategorized',
+                lessonsCount: doc.lessonsCount || 0,
+                studentsCount: doc.studentsCount || 0,
+                isPublished: doc.isPublished || false, // Ensure boolean
+                instructorId: doc.instructorId
+            }));
+
+            setCourses(mappedCourses);
+        } catch (error) {
+            console.error('Failed to fetch courses:', error);
+            toast.error('Failed to load courses');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTogglePublish = async (courseId, currentStatus) => {
+        try {
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.COURSES,
+                courseId,
+                {
+                    isPublished: !currentStatus
+                }
+            );
+
+            setCourses(courses.map(c =>
+                c.id === courseId ? { ...c, isPublished: !c.isPublished } : c
+            ));
+            toast.success('Course status updated');
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            toast.error('Failed to update course status');
+        }
+    };
+
+    const handleDelete = async (courseId) => {
+        if (window.confirm('Are you sure you want to delete this course? This cannot be undone.')) {
+            try {
+                await databases.deleteDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    courseId
+                );
+
+                setCourses(courses.filter(c => c.id !== courseId));
+                toast.success('Course deleted');
+            } catch (error) {
+                console.error('Delete failed:', error);
+                toast.error('Failed to delete course');
+            }
+        }
+    };
+
+
 
     const filteredCourses = courses.filter(course =>
         course.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    const handleTogglePublish = (courseId) => {
-        setCourses(courses.map(c =>
-            c.id === courseId ? { ...c, isPublished: !c.isPublished } : c
-        ));
-        toast.success('Course status updated');
-    };
-
-    const handleDelete = (courseId) => {
-        if (window.confirm('Are you sure you want to delete this course?')) {
-            setCourses(courses.filter(c => c.id !== courseId));
-            toast.success('Course deleted');
-        }
-    };
 
     return (
         <Box sx={{ py: { xs: 4, md: 6 } }}>
