@@ -1,19 +1,45 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { HiPlay, HiCheck, HiChevronLeft, HiChevronRight, HiMenu } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Typography,
+    Button,
+    IconButton,
+    Card,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Drawer,
+    Fab,
+    Breadcrumbs,
+    Stack,
+    useTheme,
+    useMediaQuery,
+} from '@mui/material';
+import {
+    PlayArrow as PlayIcon,
+    Check as CheckIcon,
+    ChevronLeft as ChevronLeftIcon,
+    ChevronRight as ChevronRightIcon,
+    Menu as MenuIcon,
+} from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import { Button } from '../../components/common';
 import { VideoPlayer } from '../../components/course';
 
 /**
  * Learn Page
  * 
- * Video player with lesson navigation sidebar.
+ * MUI-based video player with lesson navigation sidebar.
  */
 export function Learn() {
     const { courseId, lessonId } = useParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [completedLessons, setCompletedLessons] = useState(['l1']);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Demo course data (will be fetched from Appwrite later)
     const course = {
@@ -71,154 +97,219 @@ export function Learn() {
 
     const isLessonCompleted = (id) => completedLessons.includes(id);
 
+    // Sidebar content
+    const sidebarContent = (
+        <Box sx={{ width: 320, bgcolor: 'background.paper', height: '100%', overflow: 'auto' }}>
+            {course.modules.map((module) => (
+                <Box key={module.id}>
+                    <Typography
+                        variant="subtitle2"
+                        sx={{
+                            p: 2,
+                            bgcolor: 'action.hover',
+                            fontWeight: 600,
+                        }}
+                    >
+                        {module.title}
+                    </Typography>
+                    <List disablePadding>
+                        {module.lessons.map((lesson) => (
+                            <ListItem key={lesson.id} disablePadding>
+                                <ListItemButton
+                                    component={Link}
+                                    to={`/learn/${courseId}/${lesson.id}`}
+                                    selected={lesson.id === lessonId}
+                                    onClick={() => isMobile && setSidebarOpen(false)}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 36 }}>
+                                        {isLessonCompleted(lesson.id) ? (
+                                            <CheckIcon color="success" fontSize="small" />
+                                        ) : (
+                                            <PlayIcon color="action" fontSize="small" />
+                                        )}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={lesson.title}
+                                        secondary={lesson.duration}
+                                        primaryTypographyProps={{ variant: 'body2' }}
+                                        secondaryTypographyProps={{ variant: 'caption' }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
+            ))}
+        </Box>
+    );
+
     if (!currentLesson) {
         return (
-            <div className="empty-state" style={{ minHeight: '80vh' }}>
-                <div className="empty-state__icon">🔍</div>
-                <h3 className="empty-state__title">Lesson not found</h3>
-                <Link to={`/courses/${courseId}`}>
-                    <Button variant="primary">Back to Course</Button>
-                </Link>
-            </div>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '80vh',
+                    gap: 2,
+                }}
+            >
+                <Typography variant="h2">🔍</Typography>
+                <Typography variant="h6">Lesson not found</Typography>
+                <Button
+                    component={Link}
+                    to={`/courses/${courseId}`}
+                    variant="contained"
+                >
+                    Back to Course
+                </Button>
+            </Box>
         );
     }
 
     return (
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+        <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
             {/* Main Content */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Video Player */}
-                <div style={{ background: 'var(--color-bg-secondary)', padding: 'var(--space-md)' }}>
-                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <Box sx={{ bgcolor: 'background.paper', p: 2 }}>
+                    <Container maxWidth="lg" disableGutters>
                         <VideoPlayer
                             youtubeUrl={currentLesson.youtubeUrl}
                             title={currentLesson.title}
                         />
-                    </div>
-                </div>
+                    </Container>
+                </Box>
 
                 {/* Lesson Info */}
-                <div style={{ padding: 'var(--space-lg)', flex: 1 }}>
-                    <div className="container" style={{ maxWidth: '1200px' }}>
+                <Box sx={{ p: 3, flex: 1 }}>
+                    <Container maxWidth="lg" disableGutters>
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-sm text-sm text-muted mb-md">
-                            <Link to={`/courses/${courseId}`} style={{ color: 'var(--color-primary-light)' }}>
+                        <Breadcrumbs sx={{ mb: 2 }}>
+                            <Typography
+                                component={Link}
+                                to={`/courses/${courseId}`}
+                                color="primary"
+                                sx={{ textDecoration: 'none' }}
+                            >
                                 {course.title}
-                            </Link>
-                            <span>/</span>
-                            <span>{currentModule?.title}</span>
-                        </div>
+                            </Typography>
+                            <Typography color="text.secondary">
+                                {currentModule?.title}
+                            </Typography>
+                        </Breadcrumbs>
 
                         {/* Title and Actions */}
-                        <div className="flex items-start justify-between gap-lg mb-lg flex-wrap">
-                            <div>
-                                <h1 className="text-2xl font-bold mb-sm">{currentLesson.title}</h1>
-                                <p className="text-secondary">Duration: {currentLesson.duration}</p>
-                            </div>
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'flex-start', sm: 'center' }}
+                            spacing={2}
+                            sx={{ mb: 4 }}
+                        >
+                            <Box>
+                                <Typography variant="h4" fontWeight={700} gutterBottom>
+                                    {currentLesson.title}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Duration: {currentLesson.duration}
+                                </Typography>
+                            </Box>
 
                             <Button
-                                variant={isLessonCompleted(lessonId) ? 'success' : 'primary'}
+                                variant={isLessonCompleted(lessonId) ? 'outlined' : 'contained'}
+                                color={isLessonCompleted(lessonId) ? 'success' : 'primary'}
                                 onClick={handleMarkComplete}
                                 disabled={isLessonCompleted(lessonId)}
+                                startIcon={<CheckIcon />}
                             >
-                                <HiCheck />
                                 {isLessonCompleted(lessonId) ? 'Completed' : 'Mark Complete'}
                             </Button>
-                        </div>
+                        </Stack>
 
                         {/* Navigation */}
-                        <div className="flex items-center justify-between gap-md mt-xl">
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            sx={{ mt: 4 }}
+                        >
                             {prevLesson ? (
-                                <Link to={`/learn/${courseId}/${prevLesson.id}`}>
-                                    <Button variant="secondary">
-                                        <HiChevronLeft />
-                                        Previous
-                                    </Button>
-                                </Link>
+                                <Button
+                                    component={Link}
+                                    to={`/learn/${courseId}/${prevLesson.id}`}
+                                    variant="outlined"
+                                    startIcon={<ChevronLeftIcon />}
+                                >
+                                    Previous
+                                </Button>
                             ) : (
-                                <div />
+                                <Box />
                             )}
 
                             {nextLesson ? (
-                                <Link to={`/learn/${courseId}/${nextLesson.id}`}>
-                                    <Button variant="primary">
-                                        Next
-                                        <HiChevronRight />
-                                    </Button>
-                                </Link>
+                                <Button
+                                    component={Link}
+                                    to={`/learn/${courseId}/${nextLesson.id}`}
+                                    variant="contained"
+                                    endIcon={<ChevronRightIcon />}
+                                >
+                                    Next
+                                </Button>
                             ) : (
-                                <Link to="/dashboard">
-                                    <Button variant="success">
-                                        <HiCheck />
-                                        Finish Course
-                                    </Button>
-                                </Link>
+                                <Button
+                                    component={Link}
+                                    to="/dashboard"
+                                    variant="contained"
+                                    color="success"
+                                    startIcon={<CheckIcon />}
+                                >
+                                    Finish Course
+                                </Button>
                             )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </Stack>
+                    </Container>
+                </Box>
+            </Box>
 
-            {/* Sidebar Toggle (Mobile) */}
-            <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                style={{
-                    position: 'fixed',
-                    bottom: 'var(--space-lg)',
-                    right: 'var(--space-lg)',
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    background: 'var(--color-primary)',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: 'var(--shadow-lg)',
-                    zIndex: 100,
-                }}
-                className="hidden-desktop"
-            >
-                <HiMenu size={24} />
-            </button>
+            {/* Desktop Sidebar */}
+            {!isMobile && sidebarOpen && (
+                <Box
+                    sx={{
+                        width: 320,
+                        borderLeft: 1,
+                        borderColor: 'divider',
+                        overflow: 'auto',
+                    }}
+                >
+                    {sidebarContent}
+                </Box>
+            )}
 
-            {/* Sidebar */}
-            <aside
-                className="lesson-sidebar"
-                style={{
-                    width: sidebarOpen ? '320px' : '0',
-                    minWidth: sidebarOpen ? '320px' : '0',
-                    overflow: 'hidden',
-                    transition: 'all var(--transition-normal)',
-                }}
+            {/* Mobile Sidebar Drawer */}
+            <Drawer
+                anchor="right"
+                open={isMobile && sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
             >
-                {course.modules.map((module) => (
-                    <div key={module.id} className="lesson-sidebar__module">
-                        <div className="lesson-sidebar__module-title">
-                            {module.title}
-                        </div>
-                        {module.lessons.map((lesson) => (
-                            <Link
-                                key={lesson.id}
-                                to={`/learn/${courseId}/${lesson.id}`}
-                                className={`lesson-sidebar__lesson ${lesson.id === lessonId ? 'lesson-sidebar__lesson--active' : ''
-                                    } ${isLessonCompleted(lesson.id) ? 'lesson-sidebar__lesson--completed' : ''}`}
-                            >
-                                <span className="lesson-sidebar__lesson-icon">
-                                    {isLessonCompleted(lesson.id) ? (
-                                        <HiCheck size={16} />
-                                    ) : (
-                                        <HiPlay size={16} />
-                                    )}
-                                </span>
-                                <span style={{ flex: 1 }}>{lesson.title}</span>
-                                <span className="text-muted text-xs">{lesson.duration}</span>
-                            </Link>
-                        ))}
-                    </div>
-                ))}
-            </aside>
-        </div>
+                {sidebarContent}
+            </Drawer>
+
+            {/* Mobile FAB */}
+            {isMobile && (
+                <Fab
+                    color="primary"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    sx={{
+                        position: 'fixed',
+                        bottom: 16,
+                        right: 16,
+                    }}
+                >
+                    <MenuIcon />
+                </Fab>
+            )}
+        </Box>
     );
 }
 

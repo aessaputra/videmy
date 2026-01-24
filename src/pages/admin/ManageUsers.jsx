@@ -1,13 +1,38 @@
 import { useState } from 'react';
-import { HiSearch, HiUserCircle, HiShieldCheck, HiBan } from 'react-icons/hi';
+import {
+    Box,
+    Container,
+    Typography,
+    Button,
+    IconButton,
+    TextField,
+    InputAdornment,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    Chip,
+    Avatar,
+    Stack,
+    Select,
+    MenuItem,
+    FormControl,
+} from '@mui/material';
+import {
+    Search as SearchIcon,
+    Block as BlockIcon,
+    CheckCircle as CheckCircleIcon,
+} from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { ROLES } from '../../context/AuthContext';
-import { Button } from '../../components/common';
 
 /**
  * Manage Users Page (Admin Only)
  * 
- * User management with role assignment.
+ * MUI-based user management with role assignment.
  */
 export function ManageUsers() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -44,155 +69,131 @@ export function ManageUsers() {
         toast.success('User status updated');
     };
 
-    const getRoleBadgeClass = (role) => {
-        switch (role) {
-            case ROLES.ADMIN: return 'badge--primary';
-            case ROLES.INSTRUCTOR: return 'badge--success';
-            default: return '';
-        }
-    };
+    const roleFilters = ['all', ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT];
 
     return (
-        <div className="py-xl">
-            <div className="container">
+        <Box sx={{ py: { xs: 4, md: 6 } }}>
+            <Container maxWidth="lg">
                 {/* Header */}
-                <div className="mb-xl">
-                    <h1 className="text-2xl font-bold mb-sm">Manage Users</h1>
-                    <p className="text-secondary">View and manage user accounts and roles</p>
-                </div>
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                        Manage Users
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        View and manage user accounts and roles
+                    </Typography>
+                </Box>
 
                 {/* Filters */}
-                <div className="flex gap-md mb-lg flex-wrap">
-                    <div style={{ flex: 1, minWidth: '200px', maxWidth: '400px' }}>
-                        <div style={{ position: 'relative' }}>
-                            <HiSearch
-                                size={20}
-                                style={{
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: 'var(--color-text-muted)'
-                                }}
-                            />
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="Search users..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ paddingLeft: '40px' }}
-                            />
-                        </div>
-                    </div>
+                <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
+                    sx={{ mb: 3 }}
+                >
+                    <TextField
+                        placeholder="Search users..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ flexGrow: 1, maxWidth: 400 }}
+                    />
 
-                    <div className="flex gap-sm">
-                        {['all', ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT].map((role) => (
+                    <Stack direction="row" spacing={1}>
+                        {roleFilters.map((role) => (
                             <Button
                                 key={role}
-                                variant={roleFilter === role ? 'primary' : 'secondary'}
-                                size="sm"
+                                variant={roleFilter === role ? 'contained' : 'outlined'}
+                                size="small"
                                 onClick={() => setRoleFilter(role)}
                             >
                                 {role === 'all' ? 'All' : role.charAt(0).toUpperCase() + role.slice(1)}
                             </Button>
                         ))}
-                    </div>
-                </div>
+                    </Stack>
+                </Stack>
 
                 {/* Users Table */}
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ background: 'var(--color-bg-tertiary)' }}>
-                                    <th style={{ padding: 'var(--space-md)', textAlign: 'left', fontWeight: 'var(--font-semibold)' }}>
-                                        User
-                                    </th>
-                                    <th style={{ padding: 'var(--space-md)', textAlign: 'left', fontWeight: 'var(--font-semibold)' }}>
-                                        Email
-                                    </th>
-                                    <th style={{ padding: 'var(--space-md)', textAlign: 'center', fontWeight: 'var(--font-semibold)' }}>
-                                        Role
-                                    </th>
-                                    <th style={{ padding: 'var(--space-md)', textAlign: 'center', fontWeight: 'var(--font-semibold)' }}>
-                                        Status
-                                    </th>
-                                    <th style={{ padding: 'var(--space-md)', textAlign: 'right', fontWeight: 'var(--font-semibold)' }}>
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredUsers.map((user) => (
-                                    <tr
-                                        key={user.id}
-                                        style={{ borderBottom: '1px solid var(--color-border)' }}
-                                    >
-                                        <td style={{ padding: 'var(--space-md)' }}>
-                                            <div className="flex items-center gap-sm">
-                                                <div className="avatar avatar--sm">
-                                                    {user.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <span className="font-medium">{user.name}</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: 'var(--space-md)', color: 'var(--color-text-secondary)' }}>
-                                            {user.email}
-                                        </td>
-                                        <td style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
-                                            <select
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell><strong>User</strong></TableCell>
+                                <TableCell><strong>Email</strong></TableCell>
+                                <TableCell align="center"><strong>Role</strong></TableCell>
+                                <TableCell align="center"><strong>Status</strong></TableCell>
+                                <TableCell align="right"><strong>Actions</strong></TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {filteredUsers.map((user) => (
+                                <TableRow key={user.id} hover>
+                                    <TableCell>
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                                                {user.name.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                            <Typography fontWeight={500}>{user.name}</Typography>
+                                        </Stack>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography color="text.secondary">{user.email}</Typography>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                                            <Select
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                                className="input"
-                                                style={{ width: 'auto', padding: 'var(--space-xs) var(--space-sm)' }}
                                             >
-                                                <option value={ROLES.STUDENT}>Student</option>
-                                                <option value={ROLES.INSTRUCTOR}>Instructor</option>
-                                                <option value={ROLES.ADMIN}>Admin</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
-                                            <span className={`badge ${user.status === 'active' ? 'badge--success' : 'badge--warning'}`}>
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: 'var(--space-md)' }}>
-                                            <div className="flex gap-sm justify-end">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleToggleStatus(user.id)}
-                                                    title={user.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                >
-                                                    {user.status === 'active' ? (
-                                                        <HiBan size={18} style={{ color: 'var(--color-error)' }} />
-                                                    ) : (
-                                                        <HiShieldCheck size={18} style={{ color: 'var(--color-success)' }} />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                                <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
+                                                <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
+                                                <MenuItem value={ROLES.ADMIN}>Admin</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Chip
+                                            label={user.status}
+                                            color={user.status === 'active' ? 'success' : 'warning'}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <IconButton
+                                            onClick={() => handleToggleStatus(user.id)}
+                                            title={user.status === 'active' ? 'Deactivate' : 'Activate'}
+                                            size="small"
+                                            color={user.status === 'active' ? 'error' : 'success'}
+                                        >
+                                            {user.status === 'active' ? <BlockIcon /> : <CheckCircleIcon />}
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
 
                     {filteredUsers.length === 0 && (
-                        <div className="empty-state">
-                            <div className="empty-state__icon">👤</div>
-                            <h3 className="empty-state__title">No users found</h3>
-                            <p className="empty-state__desc">Try adjusting your search or filter</p>
-                        </div>
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                            <Typography variant="h2" sx={{ mb: 2 }}>👤</Typography>
+                            <Typography variant="h6" gutterBottom>No users found</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Try adjusting your search or filter
+                            </Typography>
+                        </Box>
                     )}
-                </div>
+                </TableContainer>
 
-                <p className="text-sm text-muted mt-md">
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                     Showing {filteredUsers.length} of {users.length} users
-                </p>
-            </div>
-        </div>
+                </Typography>
+            </Container>
+        </Box>
     );
 }
 
