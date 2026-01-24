@@ -4,82 +4,105 @@
  * Custom theme with Teal/Gold color scheme, Inter/Poppins typography,
  * and dark/light mode support using MUI's colorSchemes.
  */
-import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes, alpha } from '@mui/material/styles';
 
 // Create base theme with color schemes for dark/light mode
 let theme = createTheme({
-    // Enable both light and dark color schemes with custom palettes
+    cssVariables: {
+        colorSchemeSelector: 'class',
+    },
+
+    // Color schemes for light/dark mode
     colorSchemes: {
         light: {
             palette: {
                 primary: {
-                    main: '#14b8a6',      // Teal
+                    main: '#14b8a6',
                     light: '#2dd4bf',
                     dark: '#0d9488',
                     contrastText: '#ffffff',
                 },
                 secondary: {
-                    main: '#f59e0b',      // Gold/Amber
+                    main: '#f59e0b',
                     light: '#fbbf24',
                     dark: '#d97706',
                     contrastText: '#000000',
+                },
+                info: {
+                    main: '#22d3ee',
+                    light: '#67e8f9',
+                    dark: '#0891b2',
+                },
+                success: {
+                    main: '#22c55e',
+                    light: '#4ade80',
+                    dark: '#16a34a',
+                },
+                warning: {
+                    main: '#f59e0b',
+                    light: '#fbbf24',
+                    dark: '#d97706',
+                },
+                error: {
+                    main: '#ef4444',
+                    light: '#f87171',
+                    dark: '#dc2626',
                 },
                 background: {
                     default: '#f8fafc',
                     paper: '#ffffff',
                 },
+                text: {
+                    primary: '#1e293b',
+                    secondary: '#64748b',
+                },
+                divider: 'rgba(0, 0, 0, 0.08)',
             },
         },
         dark: {
             palette: {
                 primary: {
-                    main: '#14b8a6',      // Same teal as light mode
+                    main: '#14b8a6',
                     light: '#2dd4bf',
                     dark: '#0d9488',
                     contrastText: '#ffffff',
                 },
                 secondary: {
-                    main: '#f59e0b',      // Same gold as light mode
+                    main: '#f59e0b',
                     light: '#fbbf24',
                     dark: '#d97706',
                     contrastText: '#000000',
                 },
+                info: {
+                    main: '#22d3ee',
+                    light: '#67e8f9',
+                    dark: '#0891b2',
+                },
+                success: {
+                    main: '#22c55e',
+                    light: '#4ade80',
+                    dark: '#16a34a',
+                },
+                warning: {
+                    main: '#f59e0b',
+                    light: '#fbbf24',
+                    dark: '#d97706',
+                },
+                error: {
+                    main: '#ef4444',
+                    light: '#f87171',
+                    dark: '#dc2626',
+                },
                 background: {
-                    default: '#0f172a',   // Dark slate background
-                    paper: '#1e293b',     // Slightly lighter for cards/paper
+                    default: '#0f172a',
+                    paper: '#1e293b',
                 },
                 text: {
                     primary: '#f1f5f9',
                     secondary: '#94a3b8',
                 },
+                divider: 'rgba(255, 255, 255, 0.12)',
             },
-        },
-    },
-    cssVariables: {
-        colorSchemeSelector: 'class',
-    },
-
-    // Shared palette colors (info, success, warning, error)
-    palette: {
-        info: {
-            main: '#22d3ee',      // Light Teal/Cyan (accent)
-            light: '#67e8f9',
-            dark: '#0891b2',
-        },
-        success: {
-            main: '#22c55e',
-            light: '#4ade80',
-            dark: '#16a34a',
-        },
-        warning: {
-            main: '#f59e0b',
-            light: '#fbbf24',
-            dark: '#d97706',
-        },
-        error: {
-            main: '#ef4444',
-            light: '#f87171',
-            dark: '#dc2626',
         },
     },
 
@@ -195,14 +218,18 @@ let theme = createTheme({
         },
         MuiAppBar: {
             styleOverrides: {
-                root: {
+                root: ({ theme }) => ({
                     boxShadow: 'none',
-                    borderBottom: '1px solid',
-                    borderColor: 'rgba(0, 0, 0, 0.08)',
-                },
+                    backgroundColor: alpha(
+                        theme.palette.background.default,
+                        0.85
+                    ),
+                    backdropFilter: 'blur(20px)',
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                }),
             },
             defaultProps: {
-                color: 'inherit',
+                color: 'transparent',
             },
         },
         MuiChip: {

@@ -258,19 +258,6 @@ export function Navbar() {
             <AppBar
                 position="sticky"
                 elevation={0}
-                sx={(theme) => ({
-                    bgcolor: alpha(
-                        theme.palette.mode === 'dark'
-                            ? theme.palette.background.default
-                            : theme.palette.background.paper,
-                        theme.palette.mode === 'dark' ? 0.95 : 0.8
-                    ),
-                    backdropFilter: 'blur(20px)',
-                    borderBottom: `1px solid ${alpha(
-                        theme.palette.divider,
-                        theme.palette.mode === 'dark' ? 0.15 : 0.1
-                    )}`,
-                })}
             >
                 <Container maxWidth="lg">
                     <Toolbar disableGutters sx={{ gap: 2, minHeight: { xs: 64, md: 70 } }}>
