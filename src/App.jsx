@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 
 // Context
 import { AuthProvider, ROLES } from './context/AuthContext';
@@ -160,27 +160,10 @@ function App() {
 
           {/* Toast Notifications */}
           <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: 'var(--color-bg-card)',
-                color: 'var(--color-text-primary)',
-                border: '1px solid var(--color-border)',
-              },
-              success: {
-                iconTheme: {
-                  primary: 'var(--color-success)',
-                  secondary: 'white',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: 'var(--color-error)',
-                  secondary: 'white',
-                },
-              },
-            }}
+            position="bottom-right"
+            richColors
+            closeButton
+            duration={4000}
           />
         </AuthProvider>
       </ThemeProvider>

@@ -13,7 +13,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { motion as MotionLibrary } from 'motion/react';
 import { CourseCard } from '../../components/course';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 // Motion wrapper

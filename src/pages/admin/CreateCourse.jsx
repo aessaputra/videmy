@@ -13,7 +13,7 @@ import {
     Switch,
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, ID, COLLECTIONS, DATABASE_ID, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';

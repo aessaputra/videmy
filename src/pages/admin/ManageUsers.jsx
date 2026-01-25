@@ -28,7 +28,7 @@ import {
     CheckCircle as CheckCircleIcon,
     Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { ROLES, useAuth } from '../../context/AuthContext';
 import { databases, DATABASE_ID, COLLECTIONS, Query } from '../../lib/appwrite';
 

@@ -27,7 +27,7 @@ import {
     CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { motion } from 'motion/react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';

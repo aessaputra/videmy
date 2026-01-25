@@ -27,7 +27,7 @@ import {
     VisibilityOff as VisibilityOffIcon,
     Search as SearchIcon,
 } from '@mui/icons-material';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 

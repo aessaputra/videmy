@@ -29,7 +29,7 @@ import {
     Menu as MenuIcon,
 } from '@mui/icons-material';
 import videmyLogo from '../../assets/videmy-logo.png';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
 import { VideoPlayer } from '../../components/course';

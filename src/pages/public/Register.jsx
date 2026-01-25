@@ -21,7 +21,7 @@ import {
     School as SchoolIcon,
 } from '@mui/icons-material';
 import { motion } from 'motion/react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth, ROLES } from '../../context/AuthContext';
 
 // Motion wrapper

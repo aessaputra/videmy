@@ -22,7 +22,7 @@ import {
     Person as PersonIcon,
     PhotoCamera as PhotoIcon,
 } from '@mui/icons-material';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { account, storage, ID, STORAGE_BUCKET_ID, Permission, Role } from '../../lib/appwrite';
 

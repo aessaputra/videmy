@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { CloudUpload as UploadIcon, YouTube as YouTubeIcon, Image as ImageIcon } from '@mui/icons-material';
 import { storage, ID, STORAGE_BUCKET_ID, Permission, Role } from '../../lib/appwrite';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export function ThumbnailUploader({ initialValue, onChange, user }) {
     const [tab, setTab] = useState(0); // 0: Upload, 1: YouTube

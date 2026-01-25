@@ -33,7 +33,7 @@ import {
     Delete as DeleteIcon,
     PlayArrow as LessonIcon,
 } from '@mui/icons-material';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
