@@ -37,6 +37,7 @@ let theme = createTheme({
                     main: '#22c55e',
                     light: '#4ade80',
                     dark: '#16a34a',
+                    contrastText: '#ffffff',
                 },
                 warning: {
                     main: '#f59e0b',
@@ -82,6 +83,7 @@ let theme = createTheme({
                     main: '#22c55e',
                     light: '#4ade80',
                     dark: '#16a34a',
+                    contrastText: '#ffffff',
                 },
                 warning: {
                     main: '#f59e0b',

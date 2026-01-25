@@ -28,6 +28,7 @@ import {
     ChevronRight as ChevronRightIcon,
     Menu as MenuIcon,
 } from '@mui/icons-material';
+import videmyLogo from '../../assets/videmy-logo.png';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
@@ -49,6 +50,15 @@ export function Learn() {
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [completedLessons, setCompletedLessons] = useState([]);
+
+    // Reset sidebar state on screen resize
+    useEffect(() => {
+        if (!isMobile) {
+            setSidebarOpen(true);
+        } else {
+            setSidebarOpen(false); // Optional: Auto-close on mobile when first loading/resizing
+        }
+    }, [isMobile]);
 
     useEffect(() => {
         const fetchCourseData = async () => {
@@ -260,7 +270,47 @@ export function Learn() {
     }
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', bgcolor: 'background.default' }}>
+            {/* Custom Header for Learn Mode */}
+            <Box sx={{ height: 64, borderBottom: 1, borderColor: 'divider', px: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'background.paper' }}>
+                <Box
+                    component={Link}
+                    to="/dashboard"
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        textDecoration: 'none',
+                    }}
+                >
+                    <Box
+                        component="img"
+                        src={videmyLogo}
+                        alt="Videmy Logo"
+                        sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 1,
+                            objectFit: 'contain',
+                        }}
+                    />
+                    <Typography
+                        variant="h6"
+                        component="span"
+                        color="primary"
+                        sx={{
+                            fontWeight: 800,
+                            letterSpacing: -0.5
+                        }}
+                    >
+                        Videmy
+                    </Typography>
+                </Box>
+                <Button component={Link} to={`/courses/${courseId}`} variant="outlined" size="small">
+                    Course Overview
+                </Button>
+            </Box>
+
             <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* Main Content Area (Scrollable) */}
                 <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -299,7 +349,18 @@ export function Learn() {
                                             component={prevLesson ? Link : 'button'}
                                             to={prevLesson ? `/learn/${courseId}/${prevLesson.id}` : '#'}
                                             variant="outlined"
+                                            color="inherit"
                                             startIcon={<ChevronLeftIcon />}
+                                            sx={{
+                                                borderRadius: 8,
+                                                px: 3,
+                                                textTransform: 'none',
+                                                borderColor: 'divider',
+                                                '&:hover': {
+                                                    borderColor: 'text.primary',
+                                                    bgcolor: 'action.hover'
+                                                }
+                                            }}
                                         >
                                             Previous
                                         </Button>
@@ -307,10 +368,18 @@ export function Learn() {
                                             component={nextLesson ? Link : 'button'}
                                             to={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : '/dashboard'}
                                             variant="contained"
+                                            size="medium"
                                             endIcon={nextLesson ? <ChevronRightIcon /> : <CheckIcon />}
                                             color={nextLesson ? 'primary' : 'success'}
+                                            disableElevation
+                                            sx={{
+                                                borderRadius: 8,
+                                                px: 3,
+                                                textTransform: 'none',
+                                                fontWeight: 600
+                                            }}
                                         >
-                                            {nextLesson ? 'Next' : 'Finish'}
+                                            {nextLesson ? 'Next Lesson' : 'Finish Course'}
                                         </Button>
                                     </Stack>
                                 )}
@@ -335,7 +404,14 @@ export function Learn() {
                                     color={isLessonCompleted(lessonId) ? 'success' : 'primary'}
                                     onClick={handleMarkComplete}
                                     startIcon={<CheckIcon />}
-                                    sx={{ minWidth: 160 }}
+                                    disableElevation
+                                    sx={{
+                                        minWidth: 180,
+                                        borderRadius: 8,
+                                        textTransform: 'none',
+                                        fontWeight: 600,
+                                        py: 1.5
+                                    }}
                                 >
                                     {isLessonCompleted(lessonId) ? 'Completed' : 'Mark Complete'}
                                 </Button>
