@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { account, storage, ID, STORAGE_BUCKET_ID } from '../../lib/appwrite';
+import { account, storage, ID, STORAGE_BUCKET_ID, Permission, Role } from '../../lib/appwrite';
 
 function TabPanel({ children, value, index, ...other }) {
     return (
@@ -45,7 +45,7 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 export function Profile() {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [tabValue, setTabValue] = useState(0);
     const [loading, setLoading] = useState(false);
 
@@ -94,11 +94,17 @@ export function Profile() {
 
         setLoading(true);
         try {
-            // Upload to Appwrite Storage
+            // Upload to Appwrite Storage with Explicit Permissions
+            // Best Practice: File Security ENABLED + File-level permissions
             const response = await storage.createFile(
                 STORAGE_BUCKET_ID,
                 ID.unique(),
-                file
+                file,
+                [
+                    Permission.read(Role.any()),                // Public Read
+                    Permission.update(Role.user(user.$id)),     // Owner Update
+                    Permission.delete(Role.user(user.$id))      // Owner Delete
+                ]
             );
 
             // Get Preview URL
@@ -106,6 +112,21 @@ export function Profile() {
                 STORAGE_BUCKET_ID,
                 response.$id,
             );
+
+            // DELETE OLD AVATAR IF EXISTS (Best Practice: Avoid storage clutter)
+            if (profileData.avatar) {
+                try {
+                    // Extract File ID from URL: .../files/{FILE_ID}/...
+                    const match = profileData.avatar.match(/files\/([^/]+)\//);
+                    if (match && match[1]) {
+                        const oldFileId = match[1];
+                        await storage.deleteFile(STORAGE_BUCKET_ID, oldFileId);
+                        console.log('Deleted old avatar:', oldFileId);
+                    }
+                } catch (delError) {
+                    console.warn('Failed to delete old avatar (might be from different bucket or already deleted):', delError);
+                }
+            }
 
             setProfileData(prev => ({ ...prev, avatar: fileUrl }));
             toast.success('Image uploaded successfully! Click Save to apply.');
@@ -141,8 +162,7 @@ export function Profile() {
             await account.updatePrefs(prefs);
 
             toast.success('Profile updated successfully');
-            // Optimistic update mechanism via AuthContext would be better, 
-            // but for now local state + toast is feedback enough unless we force refresh user.
+            await refreshUser(); // Update global context immediately
         } catch (error) {
             console.error(error);
             toast.error('Failed to update profile');
@@ -196,7 +216,7 @@ export function Profile() {
                     <TabPanel value={tabValue} index={0}>
                         <Box component="form" onSubmit={updateProfile}>
                             <Grid container spacing={4}>
-                                <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <Badge
                                         overlap="circular"
                                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -234,7 +254,7 @@ export function Profile() {
                                     </Typography>
                                 </Grid>
 
-                                <Grid item xs={12} md={8}>
+                                <Grid size={{ xs: 12, md: 8 }}>
                                     <Stack spacing={3}>
                                         <TextField
                                             label="Full Name"

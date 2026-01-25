@@ -36,5 +36,5 @@ dist-ssr
 # Test coverage
 coverage/
 
-# Scripts (contains secrets)
+# Scripts
 scripts/

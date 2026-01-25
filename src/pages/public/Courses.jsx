@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -81,7 +81,7 @@ export function Courses() {
                 course.description.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory =
                 selectedCategory === 'All' || course.category === selectedCategory;
-            selectedCategory === 'All' || course.category === selectedCategory;
+
             return matchesSearch && matchesCategory;
         });
     }, [searchQuery, selectedCategory]);

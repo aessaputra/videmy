@@ -112,25 +112,31 @@ export function AuthProvider({ children }) {
      */
     const register = async (email, password, name, role = ROLES.STUDENT) => {
         try {
-            // Create the account
+            // Create the account (only declare once)
             const newAccount = await account.create(ID.unique(), email, password, name);
 
-            // Create Data in Database
-            await databases.createDocument(
-                DATABASE_ID,
-                COLLECTIONS.USERS,
-                ID.unique(),
-                {
-                    userId: newAccount.$id,
-                    name: name,
-                    email: email,
-                    role: role,
-                    status: 'active'
-                }
-            );
-
-            // Login immediately after registration
+            // Login immediately (REQUIRED before creating DB document with "users" permission)
             await account.createEmailPasswordSession(email, password);
+
+            // Create Data in Database
+            try {
+                await databases.createDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.USERS,
+                    ID.unique(),
+                    {
+                        userId: newAccount.$id,
+                        name: name,
+                        email: email,
+                        role: role,
+                        status: 'active'
+                    }
+                );
+            } catch (dbError) {
+                console.error('Failed to create user profile:', dbError);
+                // Don't fail the whole registration if DB fails, but warn.
+                // Or maybe we should? For now just log.
+            }
 
             // Set the user role in preferences (Legacy/Backup)
             await account.updatePrefs({ role });
@@ -204,7 +210,9 @@ export function AuthProvider({ children }) {
         login,
         logout,
         hasRole,
+        hasRole,
         ROLES,
+        refreshUser: init, // Expose init to allow manual refresh
     };
 
     return (

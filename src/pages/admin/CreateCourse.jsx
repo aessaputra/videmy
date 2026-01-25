@@ -16,6 +16,7 @@ import { Save as SaveIcon } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { databases, ID, COLLECTIONS, DATABASE_ID, Permission, Role } from '../../lib/appwrite';
+import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
 
 export function CreateCourse() {
     const { user } = useAuth();
@@ -69,8 +70,7 @@ export function CreateCourse() {
                 thumbnail: formData.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', // Default placeholder
                 studentsCount: 0,
                 lessonsCount: 0,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                lessonsCount: 0,
             };
 
             await databases.createDocument(
@@ -156,13 +156,10 @@ export function CreateCourse() {
                             />
                         </Stack>
 
-                        <TextField
-                            label="Thumbnail URL (Optional)"
-                            name="thumbnail"
-                            value={formData.thumbnail}
-                            onChange={handleChange}
-                            helperText="Enter an image URL for the course thumbnail"
-                            fullWidth
+                        <ThumbnailUploader
+                            initialValue={formData.thumbnail}
+                            onChange={(url) => setFormData(prev => ({ ...prev, thumbnail: url }))}
+                            user={user}
                         />
 
                         <FormControlLabel

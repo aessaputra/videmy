@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     Box,
@@ -45,6 +45,10 @@ export function CourseDetail() {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const [expanded, setExpanded] = useState('m1');
+
+    const handleChange = (panel) => (event, isExpanded) => {
+        setExpanded(isExpanded ? panel : false);
+    };
 
     // State
     const [course, setCourse] = useState(null);

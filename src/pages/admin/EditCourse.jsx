@@ -36,6 +36,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
+import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
 
 export function EditCourse() {
     const { id } = useParams();
@@ -67,9 +68,49 @@ export function EditCourse() {
     const [moduleDialog, setModuleDialog] = useState(false);
     const [lessonDialog, setLessonDialog] = useState(false);
     const [newModuleTitle, setNewModuleTitle] = useState('');
-    const [newLessonData, setNewLessonData] = useState({ title: '', videoId: '', duration: '', moduleId: '' });
+    const [newLessonData, setNewLessonData] = useState({ title: '', youtubeUrl: '', duration: '', moduleId: '' });
 
-    // --- Data Fetching ---
+    // ...
+
+    // --- Handlers: Lessons ---
+    const openAddLesson = (moduleId) => {
+        setNewLessonData({ title: '', youtubeUrl: '', duration: '', moduleId });
+        setLessonDialog(true);
+    };
+
+    const handleAddLesson = async () => {
+        if (!newLessonData.title || !newLessonData.moduleId) return;
+        try {
+            const res = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.LESSONS,
+                ID.unique(),
+                {
+                    title: newLessonData.title,
+                    youtubeUrl: newLessonData.youtubeUrl, // Schema expects youtubeUrl
+                    duration: newLessonData.duration || '10:00',
+                    moduleId: newLessonData.moduleId,
+                    content: '', // Description/Content
+                    order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length
+                },
+                [
+                    Permission.read(Role.any()),
+                    Permission.update(Role.user(user.$id)),
+                    Permission.delete(Role.user(user.$id))
+                ]
+            );
+            setLessons([...lessons, res]);
+            setLessonDialog(false);
+            toast.success('Lesson added');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to add lesson');
+        }
+    };
+
+    // ...
+
+
     useEffect(() => {
         const fetchCourseData = async () => {
             try {
@@ -142,7 +183,7 @@ export function EditCourse() {
                 price: Number(formData.price),
                 isPublished: formData.isPublished,
                 thumbnail: formData.thumbnail,
-                updatedAt: new Date().toISOString(),
+                thumbnail: formData.thumbnail,
             });
             toast.success('Course details saved');
         } catch (error) {
@@ -194,41 +235,7 @@ export function EditCourse() {
         }
     };
 
-    // --- Handlers: Lessons ---
-    const openAddLesson = (moduleId) => {
-        setNewLessonData({ title: '', videoId: '', duration: '', moduleId });
-        setLessonDialog(true);
-    };
 
-    const handleAddLesson = async () => {
-        if (!newLessonData.title || !newLessonData.moduleId) return;
-        try {
-            const res = await databases.createDocument(
-                DATABASE_ID,
-                COLLECTIONS.LESSONS,
-                ID.unique(),
-                {
-                    title: newLessonData.title,
-                    videoId: newLessonData.videoId, // YouTube ID or Appwrite File ID if implementing storage
-                    duration: newLessonData.duration || '10:00',
-                    moduleId: newLessonData.moduleId,
-                    content: '', // Description/Content
-                    order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length
-                },
-                [
-                    Permission.read(Role.any()),
-                    Permission.update(Role.user(user.$id)),
-                    Permission.delete(Role.user(user.$id))
-                ]
-            );
-            setLessons([...lessons, res]);
-            setLessonDialog(false);
-            toast.success('Lesson added');
-        } catch (error) {
-            console.error(error);
-            toast.error('Failed to add lesson');
-        }
-    };
 
     const handleDeleteLesson = async (lessonId) => {
         if (!window.confirm('Delete lesson?')) return;
@@ -260,7 +267,11 @@ export function EditCourse() {
                             <TextField label="Price" name="price" type="number" value={formData.price} onChange={handleCourseChange} fullWidth />
                         </Stack>
 
-                        <TextField label="Thumbnail URL" name="thumbnail" value={formData.thumbnail} onChange={handleCourseChange} fullWidth />
+                        <ThumbnailUploader
+                            initialValue={formData.thumbnail}
+                            onChange={(url) => setFormData(prev => ({ ...prev, thumbnail: url }))}
+                            user={user}
+                        />
 
                         <FormControlLabel control={<Switch checked={formData.isPublished} onChange={handleCourseChange} name="isPublished" color="success" />} label="Published" />
 
@@ -328,7 +339,13 @@ export function EditCourse() {
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
                         <TextField label="Lesson Title" fullWidth value={newLessonData.title} onChange={(e) => setNewLessonData({ ...newLessonData, title: e.target.value })} />
-                        <TextField label="Video ID (Youtube)" fullWidth value={newLessonData.videoId} onChange={(e) => setNewLessonData({ ...newLessonData, videoId: e.target.value })} helperText="e.g. dQw4w9WgXcQ" />
+                        <TextField
+                            label="YouTube Video URL"
+                            fullWidth
+                            value={newLessonData.youtubeUrl}
+                            onChange={(e) => setNewLessonData({ ...newLessonData, youtubeUrl: e.target.value })}
+                            helperText="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                        />
                         <TextField label="Duration" fullWidth value={newLessonData.duration} onChange={(e) => setNewLessonData({ ...newLessonData, duration: e.target.value })} helperText="e.g. 10:30" />
                     </Stack>
                 </DialogContent>
