@@ -47,30 +47,30 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public Routes with Layout */}
+              {/* Public Auth - Standalone Layout */}
+              <Route
+                path="/login"
+                element={
+                  <GuestRoute>
+                    <Login />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <GuestRoute>
+                    <Register />
+                  </GuestRoute>
+                }
+              />
+
+              {/* Public Routes with Main Layout */}
               <Route element={<Layout />}>
                 {/* Public */}
                 <Route path="/" element={<Home />} />
                 <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseDetail />} />
-
-                {/* Guest Only (Login/Register) */}
-                <Route
-                  path="/login"
-                  element={
-                    <GuestRoute>
-                      <Login />
-                    </GuestRoute>
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    <GuestRoute>
-                      <Register />
-                    </GuestRoute>
-                  }
-                />
 
                 {/* Protected - Student+ */}
                 <Route
