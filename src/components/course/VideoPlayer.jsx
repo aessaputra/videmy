@@ -9,6 +9,8 @@
  * @param {string} props.title - Video title for accessibility
  */
 
+import { Box } from '@mui/material';
+
 /**
  * Extract YouTube video ID from various URL formats
  * Supports: youtu.be/, youtube.com/watch?v=, youtube.com/embed/
@@ -53,14 +55,33 @@ export function VideoPlayer({ youtubeUrl, title = 'Video' }) {
     }
 
     return (
-        <div className="video-player">
+        <Box
+            className="video-player"
+            sx={{
+                position: 'relative',
+                width: '100%',
+                paddingTop: '56.25%', // 16:9 Aspect Ratio
+                backgroundColor: 'black',
+                overflow: 'hidden',
+                borderRadius: 2,
+                boxShadow: 3
+            }}
+        >
             <iframe
                 src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
                 title={title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 0,
+                }}
             />
-        </div>
+        </Box>
     );
 }
 

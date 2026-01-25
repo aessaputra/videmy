@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     Box,
@@ -19,6 +19,7 @@ import {
     useTheme,
     useMediaQuery,
     CircularProgress,
+    Divider,
 } from '@mui/material';
 import {
     PlayArrow as PlayIcon,
@@ -41,10 +42,13 @@ export function Learn() {
     const { courseId, lessonId } = useParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const { user } = useAuth();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // State
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [completedLessons, setCompletedLessons] = useState([]);
 
     useEffect(() => {
         const fetchCourseData = async () => {
@@ -256,142 +260,148 @@ export function Learn() {
     }
 
     return (
-        <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
-            {/* Main Content */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Video Player */}
-                <Box sx={{ bgcolor: 'background.paper', p: 2 }}>
-                    <Container maxWidth="lg" disableGutters>
-                        <VideoPlayer
-                            youtubeUrl={currentLesson.youtubeUrl}
-                            title={currentLesson.title}
-                        />
-                    </Container>
-                </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                {/* Main Content Area (Scrollable) */}
+                <Box sx={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
-                {/* Lesson Info */}
-                <Box sx={{ p: 3, flex: 1 }}>
-                    <Container maxWidth="lg" disableGutters>
-                        {/* Breadcrumb */}
-                        <Breadcrumbs sx={{ mb: 2 }}>
-                            <Typography
-                                component={Link}
-                                to={`/courses/${courseId}`}
-                                color="primary"
-                                sx={{ textDecoration: 'none' }}
-                            >
-                                {course.title}
-                            </Typography>
-                            <Typography color="text.secondary">
-                                {currentModule?.title}
-                            </Typography>
-                        </Breadcrumbs>
-
-                        {/* Title and Actions */}
-                        <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
-                            justifyContent="space-between"
-                            alignItems={{ xs: 'flex-start', sm: 'center' }}
-                            spacing={2}
-                            sx={{ mb: 4 }}
-                        >
-                            <Box>
-                                <Typography variant="h4" fontWeight={700} gutterBottom>
-                                    {currentLesson.title}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    Duration: {currentLesson.duration}
-                                </Typography>
+                    {/* Video Section (Black Background) */}
+                    <Box sx={{ bgcolor: 'black', width: '100%', py: 2 }}>
+                        <Container maxWidth="xl" sx={{ px: { xs: 0, md: 2 } }}>
+                            <Box sx={{ maxWidth: '1280px', mx: 'auto' }}>
+                                <VideoPlayer
+                                    youtubeUrl={currentLesson.youtubeUrl}
+                                    title={currentLesson.title}
+                                />
                             </Box>
+                        </Container>
+                    </Box>
 
-                            <Button
-                                variant={isLessonCompleted(lessonId) ? 'outlined' : 'contained'}
-                                color={isLessonCompleted(lessonId) ? 'success' : 'primary'}
-                                onClick={handleMarkComplete}
-                                disabled={isLessonCompleted(lessonId)}
-                                startIcon={<CheckIcon />}
-                            >
-                                {isLessonCompleted(lessonId) ? 'Completed' : 'Mark Complete'}
-                            </Button>
-                        </Stack>
+                    {/* Lesson Info & Navigation */}
+                    <Container maxWidth="xl" sx={{ flex: 1, py: 4 }}>
+                        <Box sx={{ maxWidth: '1280px', mx: 'auto' }}>
+                            {/* Breadcrumb & Navigation Row */}
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+                                <Breadcrumbs>
+                                    <Typography component={Link} to={`/courses/${courseId}`} color="inherit" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                                        {course.title}
+                                    </Typography>
+                                    <Typography color="text.primary" fontWeight={500}>
+                                        {currentModule?.title}
+                                    </Typography>
+                                </Breadcrumbs>
 
-                        {/* Navigation */}
-                        <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            sx={{ mt: 4 }}
-                        >
-                            {prevLesson ? (
-                                <Button
-                                    component={Link}
-                                    to={`/learn/${courseId}/${prevLesson.id}`}
-                                    variant="outlined"
-                                    startIcon={<ChevronLeftIcon />}
-                                >
-                                    Previous
-                                </Button>
-                            ) : (
-                                <Box />
-                            )}
+                                {/* Desktop Navigation Buttons (Top) */}
+                                {!isMobile && (
+                                    <Stack direction="row" spacing={2}>
+                                        <Button
+                                            disabled={!prevLesson}
+                                            component={prevLesson ? Link : 'button'}
+                                            to={prevLesson ? `/learn/${courseId}/${prevLesson.id}` : '#'}
+                                            variant="outlined"
+                                            startIcon={<ChevronLeftIcon />}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <Button
+                                            component={nextLesson ? Link : 'button'}
+                                            to={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : '/dashboard'}
+                                            variant="contained"
+                                            endIcon={nextLesson ? <ChevronRightIcon /> : <CheckIcon />}
+                                            color={nextLesson ? 'primary' : 'success'}
+                                        >
+                                            {nextLesson ? 'Next' : 'Finish'}
+                                        </Button>
+                                    </Stack>
+                                )}
+                            </Stack>
 
-                            {nextLesson ? (
+                            <Divider sx={{ mb: 3 }} />
+
+                            {/* Title & Actions */}
+                            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="flex-start" spacing={3}>
+                                <Box>
+                                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                                        {currentLesson.title}
+                                    </Typography>
+                                    <Typography variant="subtitle1" color="text.secondary">
+                                        Duration: {currentLesson.duration}
+                                    </Typography>
+                                </Box>
+
                                 <Button
-                                    component={Link}
-                                    to={`/learn/${courseId}/${nextLesson.id}`}
-                                    variant="contained"
-                                    endIcon={<ChevronRightIcon />}
-                                >
-                                    Next
-                                </Button>
-                            ) : (
-                                <Button
-                                    component={Link}
-                                    to="/dashboard"
-                                    variant="contained"
-                                    color="success"
+                                    size="large"
+                                    variant={isLessonCompleted(lessonId) ? 'outlined' : 'contained'}
+                                    color={isLessonCompleted(lessonId) ? 'success' : 'primary'}
+                                    onClick={handleMarkComplete}
                                     startIcon={<CheckIcon />}
+                                    sx={{ minWidth: 160 }}
                                 >
-                                    Finish Course
+                                    {isLessonCompleted(lessonId) ? 'Completed' : 'Mark Complete'}
                                 </Button>
+                            </Stack>
+
+                            {/* Mobile Navigation Buttons (Bottom) */}
+                            {isMobile && (
+                                <Stack direction="row" justifyContent="space-between" spacing={2} sx={{ mt: 4 }}>
+                                    <Button
+                                        fullWidth
+                                        disabled={!prevLesson}
+                                        component={prevLesson ? Link : 'button'}
+                                        to={prevLesson ? `/learn/${courseId}/${prevLesson.id}` : '#'}
+                                        variant="outlined"
+                                        startIcon={<ChevronLeftIcon />}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        fullWidth
+                                        component={nextLesson ? Link : 'button'}
+                                        to={nextLesson ? `/learn/${courseId}/${nextLesson.id}` : '/dashboard'}
+                                        variant="contained"
+                                        endIcon={nextLesson ? <ChevronRightIcon /> : <CheckIcon />}
+                                        color={nextLesson ? 'primary' : 'success'}
+                                    >
+                                        {nextLesson ? 'Next' : 'Finish'}
+                                    </Button>
+                                </Stack>
                             )}
-                        </Stack>
+                        </Box>
                     </Container>
                 </Box>
-            </Box>
 
-            {/* Desktop Sidebar */}
-            {!isMobile && sidebarOpen && (
-                <Box
-                    sx={{
-                        width: 320,
-                        borderLeft: 1,
-                        borderColor: 'divider',
-                        overflow: 'auto',
-                    }}
-                >
-                    {sidebarContent}
-                </Box>
-            )}
+                {/* Sidebar (Desktop) */}
+                {!isMobile && sidebarOpen && (
+                    <Box sx={{ width: 400, borderLeft: 1, borderColor: 'divider', overflowY: 'auto', bgcolor: 'background.paper' }}>
+                        <Typography variant="h6" sx={{ p: 2, position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1, borderBottom: 1, borderColor: 'divider' }}>
+                            Course Content
+                        </Typography>
+                        {sidebarContent}
+                    </Box>
+                )}
+            </Box>
 
             {/* Mobile Sidebar Drawer */}
             <Drawer
-                anchor="right"
+                anchor="bottom"
                 open={isMobile && sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
+                PaperProps={{ sx: { height: '60vh' } }}
             >
+                <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">Course Content</Typography>
+                    <Button onClick={() => setSidebarOpen(false)}>Close</Button>
+                </Box>
                 {sidebarContent}
             </Drawer>
 
-            {/* Mobile FAB */}
+            {/* Mobile FAB to toggler Sidebar */}
             {isMobile && (
                 <Fab
                     color="primary"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    sx={{
-                        position: 'fixed',
-                        bottom: 16,
-                        right: 16,
-                    }}
+                    aria-label="menu"
+                    onClick={() => setSidebarOpen(true)}
+                    sx={{ position: 'fixed', bottom: 16, right: 16 }}
                 >
                     <MenuIcon />
                 </Fab>

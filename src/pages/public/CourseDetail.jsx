@@ -32,6 +32,8 @@ import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
 
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
+
 // Motion wrapper
 const MotionBox = motion.create(Box);
 
@@ -43,7 +45,7 @@ const MotionBox = motion.create(Box);
 export function CourseDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [expanded, setExpanded] = useState('m1');
 
     const handleChange = (panel) => (event, isExpanded) => {
@@ -135,25 +137,10 @@ export function CourseDetail() {
         fetchCourseData();
     }, [id]);
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    if (!course) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-                <Typography>Course not found</Typography>
-            </Box>
-        );
-    }
-
-    // Check enrollment status
+    // Check enrollment status - Moved to top level to comply with Rules of Hooks
     useEffect(() => {
         const checkEnrollment = async () => {
+            // Internal safety check instead of conditional hook call
             if (!isAuthenticated || !course || !user) return;
 
             try {
@@ -176,6 +163,22 @@ export function CourseDetail() {
 
         checkEnrollment();
     }, [course?.id, user?.$id, isAuthenticated]);
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!course) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                <Typography>Course not found</Typography>
+            </Box>
+        );
+    }
 
     const handleEnroll = async () => {
         if (!isAuthenticated) {
@@ -391,4 +394,10 @@ export function CourseDetail() {
     );
 }
 
-export default CourseDetail;
+export default function CourseDetailWithErrorBoundary() {
+    return (
+        <ErrorBoundary>
+            <CourseDetail />
+        </ErrorBoundary>
+    );
+}

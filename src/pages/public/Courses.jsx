@@ -84,7 +84,7 @@ export function Courses() {
 
             return matchesSearch && matchesCategory;
         });
-    }, [searchQuery, selectedCategory]);
+    }, [courses, searchQuery, selectedCategory]);
 
     return (
         <Box sx={{ py: { xs: 4, md: 6 } }}>

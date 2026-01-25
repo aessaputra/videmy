@@ -38,6 +38,24 @@ import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
 
+// Helper: Convert "MM:SS" or "MM" or "123" to seconds (integer)
+const parseDuration = (input) => {
+    if (!input) return 0;
+    // If it's already a number or numeric string
+    if (!isNaN(input)) return parseInt(input, 10);
+
+    // Split by colon
+    const parts = input.toString().split(':').map(p => parseInt(p, 10));
+    if (parts.length === 2) {
+        // MM:SS
+        return (parts[0] * 60) + parts[1];
+    } else if (parts.length === 3) {
+        // HH:MM:SS
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+    }
+    return 0; // Fallback
+};
+
 export function EditCourse() {
     const { id } = useParams();
     const { user } = useAuth();
@@ -88,9 +106,8 @@ export function EditCourse() {
                 {
                     title: newLessonData.title,
                     youtubeUrl: newLessonData.youtubeUrl, // Schema expects youtubeUrl
-                    duration: newLessonData.duration || '10:00',
+                    duration: parseDuration(newLessonData.duration),
                     moduleId: newLessonData.moduleId,
-                    content: '', // Description/Content
                     order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length
                 },
                 [
