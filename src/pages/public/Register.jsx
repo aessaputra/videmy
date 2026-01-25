@@ -11,6 +11,8 @@ import {
     InputAdornment,
     IconButton,
     MenuItem,
+    Grid,
+    CssBaseline,
 } from '@mui/material';
 import {
     Email as EmailIcon,
@@ -18,14 +20,11 @@ import {
     Person as PersonIcon,
     Visibility,
     VisibilityOff,
-    School as SchoolIcon,
+    // School as SchoolIcon, // Removed as we remove the logo
 } from '@mui/icons-material';
-import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth, ROLES } from '../../context/AuthContext';
-
-// Motion wrapper
-const MotionCard = motion.create(Card);
+import Content from '../../components/auth/Content';
 
 /**
  * Register Page
@@ -103,187 +102,252 @@ export function Register() {
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: 'calc(100vh - 200px)',
-                display: 'flex',
-                alignItems: 'center',
-                py: 6,
-            }}
-        >
-            <Container maxWidth="sm">
-                <MotionCard
-                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.4, ease: 'easeOut' }}
-                    sx={{ p: { xs: 3, sm: 4 } }}
+        <Grid container component="main" sx={{ height: '100vh', overflow: 'hidden' }}>
+            <CssBaseline enableColorScheme />
+
+            {/* Left Side - Image/Content (30%) */}
+            <Grid
+                item
+                xs={false}
+                md={false} /* Disable auto-width */
+                sx={{
+                    display: { xs: 'none', md: 'block' },
+                    width: { md: '30%' },
+                    flexBasis: { md: '30%' },
+                    maxWidth: { md: '30%' },
+                    height: '100%',
+                }}
+            >
+                <Content />
+            </Grid>
+
+            {/* Right Side - Register Form (70%) */}
+            <Grid
+                item
+                xs={12}
+                md={false}
+                sx={(theme) => ({
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'background.default',
+                    ...theme.applyStyles?.('dark', {
+                        bgcolor: 'hsl(220, 30%, 5%)', // Deep Navy base
+                    }),
+                    position: 'relative',
+                    width: { xs: '100%', md: '70%' },
+                    flexBasis: { xs: '100%', md: '70%' },
+                    maxWidth: { xs: '100%', md: '70%' },
+                    borderLeft: { md: '1px solid' },
+                    borderColor: { md: 'divider' },
+                    height: '100%',
+                    overflow: 'hidden', // Outer container hides overflow
+                })}
+            >
+                {/* Pattern Background (Fixed relative to panel) */}
+                <Box
+                    sx={(theme) => ({
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 0,
+                        opacity: 0.4,
+                        backgroundImage: 'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+                        backgroundRepeat: 'no-repeat',
+                        display: { xs: 'none', md: 'block' },
+                        ...theme.applyStyles?.('dark', {
+                            /* Dark mode: Deep Navy Blue */
+                            backgroundImage: 'radial-gradient(at 50% 50%, hsla(220, 30%, 12%, 0.7), hsl(220, 30%, 5%))',
+                            bgcolor: 'hsl(220, 30%, 5%)',
+                            opacity: 1, // Ensure full visibility in dark mode
+                        }),
+                    })}
+                />
+
+                {/* Scrollable Content Area */}
+                <Box
+                    sx={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '100%',
+                        height: '100%',
+                        overflowY: 'auto', // Scroll happens here
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center', // Vertically center the content
+                        p: { xs: 2, md: 8 },
+                    }}
                 >
-                    <CardContent>
-                        {/* Logo */}
+                    <Box sx={{ width: '100%', maxWidth: { xs: '480px', md: '600px' } }}>
                         <Box
-                            component={Link}
-                            to="/"
-                            sx={{
+                            sx={(theme) => ({
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                textDecoration: 'none',
-                                mb: 3,
-                                justifyContent: 'center',
-                            }}
+                                flexDirection: 'column',
+                                alignSelf: 'center',
+                                width: '100%',
+                                padding: theme.spacing(4),
+                                gap: theme.spacing(2),
+                                margin: 'auto',
+                                [theme.breakpoints.up('sm')]: {
+                                    maxWidth: '480px',
+                                },
+                                [theme.breakpoints.up('md')]: {
+                                    maxWidth: '100%',
+                                    paddingLeft: theme.spacing(8),
+                                    paddingRight: theme.spacing(8),
+                                },
+                            })}
                         >
-                            <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
-                            <Typography variant="h5" color="primary" fontWeight={700}>
-                                Videmy
-                            </Typography>
-                        </Box>
-
-                        <Typography variant="h5" fontWeight={600} textAlign="center" gutterBottom>
-                            Create Account
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            textAlign="center"
-                            sx={{ mb: 4 }}
-                        >
-                            Start your learning journey today
-                        </Typography>
-
-                        <Box component="form" onSubmit={handleSubmit}>
-                            <TextField
-                                fullWidth
-                                label="Full Name"
-                                type="text"
-                                placeholder="John Doe"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                error={!!errors.name}
-                                helperText={errors.name}
-                                autoComplete="name"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PersonIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{ mb: 2 }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Email"
-                                type="email"
-                                placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                error={!!errors.email}
-                                helperText={errors.email}
-                                autoComplete="email"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <EmailIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{ mb: 2 }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Password"
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                error={!!errors.password}
-                                helperText={errors.password}
-                                autoComplete="new-password"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <LockIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                edge="end"
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{ mb: 2 }}
-                            />
-
-                            <TextField
-                                select
-                                fullWidth
-                                label="I am a"
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                                sx={{ mb: 2 }}
-                            >
-                                <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
-                                <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
-                            </TextField>
-
-                            <TextField
-                                fullWidth
-                                label="Confirm Password"
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                error={!!errors.confirmPassword}
-                                helperText={errors.confirmPassword}
-                                autoComplete="new-password"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <LockIcon color="action" />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{ mb: 3 }}
-                            />
-
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                fullWidth
-                                size="large"
-                                disabled={loading}
-                                startIcon={<PersonIcon />}
-                            >
-                                {loading ? 'Creating account...' : 'Create Account'}
-                            </Button>
-                        </Box>
-
-                        <Typography
-                            variant="body2"
-                            textAlign="center"
-                            sx={{ mt: 3 }}
-                        >
-                            Already have an account?{' '}
                             <Typography
-                                component={Link}
-                                to="/login"
-                                color="primary"
-                                sx={{ textDecoration: 'none', fontWeight: 500 }}
+                                component="h1"
+                                variant="h4"
+                                sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
                             >
-                                Sign in
+                                Sign up
                             </Typography>
-                        </Typography>
-                    </CardContent>
-                </MotionCard>
-            </Container>
-        </Box>
+
+
+                            <Box component="form" onSubmit={handleSubmit}>
+                                <TextField
+                                    fullWidth
+                                    label="Full Name"
+                                    type="text"
+                                    placeholder="John Doe"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    error={!!errors.name}
+                                    helperText={errors.name}
+                                    autoComplete="name"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <PersonIcon color="action" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Email"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    error={!!errors.email}
+                                    helperText={errors.email}
+                                    autoComplete="email"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <EmailIcon color="action" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    error={!!errors.password}
+                                    helperText={errors.password}
+                                    autoComplete="new-password"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <LockIcon color="action" />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="I am a"
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                    sx={{ mb: 2 }}
+                                >
+                                    <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
+                                    <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
+                                </TextField>
+
+                                <TextField
+                                    fullWidth
+                                    label="Confirm Password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    error={!!errors.confirmPassword}
+                                    helperText={errors.confirmPassword}
+                                    autoComplete="new-password"
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <LockIcon color="action" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{ mb: 3 }}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    fullWidth
+                                    size="large"
+                                    disabled={loading}
+                                    startIcon={<PersonIcon />}
+                                >
+                                    {loading ? 'Creating account...' : 'Create Account'}
+                                </Button>
+                            </Box>
+
+
+
+                            <Typography
+                                variant="body2"
+                                textAlign="center"
+                                sx={{ mt: 3 }}
+                            >
+                                Already have an account?{' '}
+                                <Typography
+                                    component={Link}
+                                    to="/login"
+                                    color="primary"
+                                    sx={{ textDecoration: 'none', fontWeight: 500 }}
+                                >
+                                    Sign in
+                                </Typography>
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            </Grid>
+        </Grid>
     );
 }
 
