@@ -29,6 +29,23 @@ const CONFIG = {
 // ============================================
 const COLLECTIONS = [
     {
+        id: 'users',
+        name: 'Users',
+        permissions: [
+            'read("users")',       // All logged in users can read profiles
+            'create("users")',     // Users can register (create profile)
+            'update("team:admins")', // Only Admins can update any profile (e.g. ban)
+            'delete("team:admins")', // Only Admins can delete
+        ],
+        attributes: [
+            { type: 'string', key: 'userId', size: 36, required: true },
+            { type: 'string', key: 'name', size: 128, required: true },
+            { type: 'string', key: 'email', size: 128, required: true },
+            { type: 'string', key: 'role', size: 20, required: true },
+            { type: 'string', key: 'status', size: 20, required: false }, // Default 'active' logic in code
+        ],
+    },
+    {
         id: 'courses',
         name: 'Courses',
         permissions: ['read("any")', 'create("users")', 'update("users")', 'delete("users")'],
@@ -90,26 +107,28 @@ const COLLECTIONS = [
 // ============================================
 async function createAttribute(databases, databaseId, collectionId, attr) {
     try {
+        const commonParams = {
+            databaseId,
+            collectionId,
+            key: attr.key,
+            required: attr.required,
+        };
+
         switch (attr.type) {
             case 'string':
-                await databases.createStringAttribute(
-                    databaseId, collectionId, attr.key, attr.size, attr.required
-                );
+                await databases.createStringAttribute({
+                    ...commonParams,
+                    size: attr.size,
+                });
                 break;
             case 'integer':
-                await databases.createIntegerAttribute(
-                    databaseId, collectionId, attr.key, attr.required
-                );
+                await databases.createIntegerAttribute(commonParams);
                 break;
             case 'boolean':
-                await databases.createBooleanAttribute(
-                    databaseId, collectionId, attr.key, attr.required
-                );
+                await databases.createBooleanAttribute(commonParams);
                 break;
             case 'datetime':
-                await databases.createDatetimeAttribute(
-                    databaseId, collectionId, attr.key, attr.required
-                );
+                await databases.createDatetimeAttribute(commonParams);
                 break;
         }
         console.log(`  ✓ ${attr.key} (${attr.type})`);
@@ -142,13 +161,19 @@ async function setup() {
     // Create database
     console.log(`📦 Membuat database: ${CONFIG.databaseName}`);
     try {
-        await databases.create(CONFIG.databaseId, CONFIG.databaseName);
+        await databases.create({
+            databaseId: CONFIG.databaseId,
+            name: CONFIG.databaseName
+        });
         console.log(`  ✓ Database berhasil dibuat\n`);
     } catch (error) {
         if (error.code === 409) {
             console.log(`  - Database sudah ada\n`);
         } else {
-            console.log(`  ✗ Error: ${error.message}\n`);
+            // Note: In some SDK versions databases.create uses positional params.
+            // If the above fails, you can try: await databases.create(CONFIG.databaseId, CONFIG.databaseName);
+            console.log(`  ✗ Error: ${error.message}`);
+            // Fallback for logging purposes, but strict syntax is Object per docs.
         }
     }
 
@@ -157,12 +182,12 @@ async function setup() {
         console.log(`📁 Membuat collection: ${collection.name}`);
 
         try {
-            await databases.createCollection(
-                CONFIG.databaseId,
-                collection.id,
-                collection.name,
-                collection.permissions
-            );
+            await databases.createCollection({
+                databaseId: CONFIG.databaseId,
+                collectionId: collection.id,
+                name: collection.name,
+                permissions: collection.permissions
+            });
             console.log(`  ✓ Collection berhasil dibuat`);
         } catch (error) {
             if (error.code === 409) {

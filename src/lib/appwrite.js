@@ -27,11 +27,16 @@ export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
 
 // Collection IDs - will be created in Appwrite console
 export const COLLECTIONS = {
+    USERS: 'users',
     COURSES: 'courses',
     MODULES: 'modules',
     LESSONS: 'lessons',
     ENROLLMENTS: 'enrollments',
+    ENROLLMENTS: 'enrollments',
     PROGRESS: 'progress',
 };
+
+// Storage Bucket ID
+export const STORAGE_BUCKET_ID = '6975bc7500182fd9ac87';
 
 export default client;

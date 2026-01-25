@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { account, ID } from '../lib/appwrite';
+import { account, databases, ID, DATABASE_ID, COLLECTIONS, Query } from '../lib/appwrite';
 
 /**
  * Authentication Context
@@ -53,9 +53,43 @@ export function AuthProvider({ children }) {
     const init = useCallback(async () => {
         try {
             const userData = await account.get();
+
+            // Try to fetch user profile from Database
+            let userProfile = null;
+            try {
+                const profileRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.USERS,
+                    [Query.equal('userId', userData.$id)]
+                );
+
+                if (profileRes.documents.length > 0) {
+                    userProfile = profileRes.documents[0];
+                } else {
+                    // Lazy create if missing (migration path)
+                    userProfile = await databases.createDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.USERS,
+                        ID.unique(),
+                        {
+                            userId: userData.$id,
+                            name: userData.name,
+                            email: userData.email,
+                            role: userData.prefs?.role || 'student',
+                            status: 'active'
+                        }
+                    );
+                }
+            } catch (dbError) {
+                console.warn('Failed to fetch/create user profile:', dbError);
+                // Fallback to existing prefs if DB fails
+            }
+
             setUser({
                 ...userData,
-                role: getUserRole(userData),
+                role: userProfile?.role || getUserRole(userData),
+                status: userProfile?.status || 'active',
+                profileId: userProfile?.$id
             });
         } catch (error) {
             // User not logged in
@@ -79,12 +113,26 @@ export function AuthProvider({ children }) {
     const register = async (email, password, name, role = ROLES.STUDENT) => {
         try {
             // Create the account
-            await account.create(ID.unique(), email, password, name);
+            const newAccount = await account.create(ID.unique(), email, password, name);
+
+            // Create Data in Database
+            await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.USERS,
+                ID.unique(),
+                {
+                    userId: newAccount.$id,
+                    name: name,
+                    email: email,
+                    role: role,
+                    status: 'active'
+                }
+            );
 
             // Login immediately after registration
             await account.createEmailPasswordSession(email, password);
 
-            // Set the user role in preferences
+            // Set the user role in preferences (Legacy/Backup)
             await account.updatePrefs({ role });
 
             // Refresh user state

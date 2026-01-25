@@ -322,6 +322,8 @@ export function Navbar() {
                         </Typography>
                         <ListItem disablePadding sx={{ mb: 0.5 }}>
                             <ListItemButton
+                                component={NavLink}
+                                to="/profile"
                                 onClick={handleDrawerToggle}
                                 sx={{
                                     borderRadius: 2,
@@ -688,14 +690,24 @@ export function Navbar() {
                                             Dashboard
                                         </MenuItem>
 
-                                        <MenuItem sx={{ py: 1.5 }}>
+                                        <MenuItem
+                                            component={Link}
+                                            to="/profile"
+                                            onClick={handleUserMenuClose}
+                                            sx={{ py: 1.5 }}
+                                        >
                                             <ListItemIcon>
                                                 <PersonIcon fontSize="small" />
                                             </ListItemIcon>
                                             Profile
                                         </MenuItem>
 
-                                        <MenuItem sx={{ py: 1.5 }}>
+                                        <MenuItem
+                                            component={Link}
+                                            to="/profile"
+                                            onClick={handleUserMenuClose}
+                                            sx={{ py: 1.5 }}
+                                        >
                                             <ListItemIcon>
                                                 <SettingsIcon fontSize="small" />
                                             </ListItemIcon>

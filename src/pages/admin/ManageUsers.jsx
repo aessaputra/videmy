@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -20,32 +20,65 @@ import {
     Select,
     MenuItem,
     FormControl,
+    CircularProgress,
 } from '@mui/material';
 import {
     Search as SearchIcon,
     Block as BlockIcon,
     CheckCircle as CheckCircleIcon,
+    Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import { ROLES } from '../../context/AuthContext';
+import { ROLES, useAuth } from '../../context/AuthContext';
+import { databases, DATABASE_ID, COLLECTIONS, Query } from '../../lib/appwrite';
 
 /**
  * Manage Users Page (Admin Only)
  * 
- * MUI-based user management with role assignment.
+ * Connected to 'users' collection in Appwrite Database.
  */
 export function ManageUsers() {
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user: currentUser } = useAuth();
 
-    // Demo users (will be fetched from Appwrite later)
-    const [users, setUsers] = useState([
-        { id: '1', name: 'John Doe', email: 'john@example.com', role: ROLES.ADMIN, status: 'active' },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: ROLES.INSTRUCTOR, status: 'active' },
-        { id: '3', name: 'Bob Wilson', email: 'bob@example.com', role: ROLES.STUDENT, status: 'active' },
-        { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: ROLES.STUDENT, status: 'active' },
-        { id: '5', name: 'Charlie Davis', email: 'charlie@example.com', role: ROLES.INSTRUCTOR, status: 'inactive' },
-    ]);
+    // Fetch Users
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            // Note: We are fetching from the 'users' collection.
+            // Ensure this collection exists and has Read permissions for 'users' or 'team:admins'.
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.USERS,
+                [
+                    Query.orderDesc('$createdAt'),
+                    Query.limit(100)
+                ]
+            );
+            // Map Appwrite docs to our shape
+            const mappedUsers = response.documents.map(doc => ({
+                id: doc.$id, // Document ID
+                userId: doc.userId, // Auth Account ID
+                name: doc.name,
+                email: doc.email,
+                role: doc.role,
+                status: doc.status || 'active',
+            }));
+            setUsers(mappedUsers);
+        } catch (error) {
+            console.error('Failed to fetch users:', error);
+            toast.error('Failed to load users. Permissions issue?');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
     const filteredUsers = users.filter(user => {
         const matchesSearch =
@@ -55,18 +88,47 @@ export function ManageUsers() {
         return matchesSearch && matchesRole;
     });
 
-    const handleRoleChange = (userId, newRole) => {
-        setUsers(users.map(u =>
-            u.id === userId ? { ...u, role: newRole } : u
-        ));
-        toast.success('User role updated');
+    const handleRoleChange = async (docId, newRole) => {
+        try {
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.USERS,
+                docId,
+                { role: newRole }
+            );
+
+            // Optimistic Update
+            setUsers(users.map(u =>
+                u.id === docId ? { ...u, role: newRole } : u
+            ));
+            toast.success('User role updated');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update role');
+        }
     };
 
-    const handleToggleStatus = (userId) => {
-        setUsers(users.map(u =>
-            u.id === userId ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
-        ));
-        toast.success('User status updated');
+    const handleToggleStatus = async (docId, currentStatus) => {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        try {
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.USERS,
+                docId,
+                { status: newStatus }
+            );
+
+            // Optimistic Update
+            setUsers(users.map(u =>
+                u.id === docId ? { ...u, status: newStatus } : u
+            ));
+
+            const action = newStatus === 'active' ? 'activated' : 'deactivated';
+            toast.success(`User ${action}`);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update status');
+        }
     };
 
     const roleFilters = ['all', ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT];
@@ -75,13 +137,18 @@ export function ManageUsers() {
         <Box sx={{ py: { xs: 4, md: 6 } }}>
             <Container maxWidth="lg">
                 {/* Header */}
-                <Box sx={{ mb: 4 }}>
-                    <Typography variant="h4" fontWeight={700} gutterBottom>
-                        Manage Users
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        View and manage user accounts and roles
-                    </Typography>
+                <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        <Typography variant="h4" fontWeight={700} gutterBottom>
+                            Manage Users
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            View and manage user accounts and roles ({users.length})
+                        </Typography>
+                    </Box>
+                    <Button startIcon={<RefreshIcon />} onClick={fetchUsers}>
+                        Refresh
+                    </Button>
                 </Box>
 
                 {/* Filters */}
@@ -120,70 +187,78 @@ export function ManageUsers() {
 
                 {/* Users Table */}
                 <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell><strong>User</strong></TableCell>
-                                <TableCell><strong>Email</strong></TableCell>
-                                <TableCell align="center"><strong>Role</strong></TableCell>
-                                <TableCell align="center"><strong>Status</strong></TableCell>
-                                <TableCell align="right"><strong>Actions</strong></TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredUsers.map((user) => (
-                                <TableRow key={user.id} hover>
-                                    <TableCell>
-                                        <Stack direction="row" spacing={1.5} alignItems="center">
-                                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                                                {user.name.charAt(0).toUpperCase()}
-                                            </Avatar>
-                                            <Typography fontWeight={500}>{user.name}</Typography>
-                                        </Stack>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography color="text.secondary">{user.email}</Typography>
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <FormControl size="small" sx={{ minWidth: 120 }}>
-                                            <Select
-                                                value={user.role}
-                                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                            >
-                                                <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
-                                                <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
-                                                <MenuItem value={ROLES.ADMIN}>Admin</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Chip
-                                            label={user.status}
-                                            color={user.status === 'active' ? 'success' : 'warning'}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <IconButton
-                                            onClick={() => handleToggleStatus(user.id)}
-                                            title={user.status === 'active' ? 'Deactivate' : 'Activate'}
-                                            size="small"
-                                            color={user.status === 'active' ? 'error' : 'success'}
-                                        >
-                                            {user.status === 'active' ? <BlockIcon /> : <CheckCircleIcon />}
-                                        </IconButton>
-                                    </TableCell>
+                    {loading ? (
+                        <Box sx={{ p: 4, textAlign: 'center' }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell><strong>User</strong></TableCell>
+                                    <TableCell><strong>Email</strong></TableCell>
+                                    <TableCell align="center"><strong>Role</strong></TableCell>
+                                    <TableCell align="center"><strong>Status</strong></TableCell>
+                                    <TableCell align="right"><strong>Actions</strong></TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHead>
+                            <TableBody>
+                                {filteredUsers.map((user) => (
+                                    <TableRow key={user.id} hover>
+                                        <TableCell>
+                                            <Stack direction="row" spacing={1.5} alignItems="center">
+                                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                                                    {user.name.charAt(0).toUpperCase()}
+                                                </Avatar>
+                                                <Typography fontWeight={500}>{user.name}</Typography>
+                                            </Stack>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography color="text.secondary">{user.email}</Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                                <Select
+                                                    value={user.role}
+                                                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                                    size="small"
+                                                >
+                                                    <MenuItem value={ROLES.STUDENT}>Student</MenuItem>
+                                                    <MenuItem value={ROLES.INSTRUCTOR}>Instructor</MenuItem>
+                                                    <MenuItem value={ROLES.ADMIN}>Admin</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Chip
+                                                label={user.status}
+                                                color={user.status === 'active' ? 'success' : 'warning'}
+                                                size="small"
+                                            />
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <IconButton
+                                                onClick={() => handleToggleStatus(user.id, user.status)}
+                                                title={user.status === 'active' ? 'Deactivate' : 'Activate'}
+                                                size="small"
+                                                color={user.status === 'active' ? 'error' : 'success'}
+                                                disabled={user.userId === currentUser?.$id} // Prevent blocking self
+                                            >
+                                                {user.status === 'active' ? <BlockIcon /> : <CheckCircleIcon />}
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
 
-                    {filteredUsers.length === 0 && (
+                    {!loading && filteredUsers.length === 0 && (
                         <Box sx={{ textAlign: 'center', py: 8 }}>
                             <Typography variant="h2" sx={{ mb: 2 }}>👤</Typography>
                             <Typography variant="h6" gutterBottom>No users found</Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Try adjusting your search or filter
+                                Ensure 'users' collection exists and has permissions.
                             </Typography>
                         </Box>
                     )}

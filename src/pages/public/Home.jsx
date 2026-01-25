@@ -8,7 +8,10 @@ import {
     Card,
     CardContent,
     Stack,
+    Skeleton,
 } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 import {
     PlayArrow as PlayIcon,
     People as PeopleIcon,
@@ -29,36 +32,50 @@ const MotionTypography = motion.create(Typography);
  * Uses Motion for smooth scroll-based animations.
  */
 export function Home() {
-    // Demo featured courses (will be fetched from Appwrite later)
-    const featuredCourses = [
-        {
-            id: '1',
-            title: 'Complete Web Development Bootcamp',
-            description: 'Belajar HTML, CSS, JavaScript, React, dan Node.js dari nol hingga mahir.',
-            category: 'Web Development',
-            thumbnail: 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800',
-            lessonsCount: 120,
-            studentsCount: 2500,
-        },
-        {
-            id: '2',
-            title: 'UI/UX Design Masterclass',
-            description: 'Kuasai prinsip desain dan tools seperti Figma untuk karir desainer.',
-            category: 'Design',
-            thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800',
-            lessonsCount: 85,
-            studentsCount: 1800,
-        },
-        {
-            id: '3',
-            title: 'Python for Data Science',
-            description: 'Pelajari Python, Pandas, dan Machine Learning untuk analisis data.',
-            category: 'Data Science',
-            thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800',
-            lessonsCount: 95,
-            studentsCount: 3200,
-        },
-    ];
+    // State for courses
+    const [featuredCourses, setFeaturedCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFeaturedCourses = async () => {
+            try {
+                const response = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    [
+                        Query.equal('isPublished', true),
+                        Query.orderDesc('studentsCount'), // Most popular
+                        Query.limit(3)
+                    ]
+                );
+
+                // Map to ensure consistent data structure if needed
+                // But dependent on CourseCard expectation.
+                // Assuming CourseCard handles Appwrite doc structure or we map it.
+                // Let's inspect CourseCard briefly or map it to match the dummy structure:
+                const courses = response.documents.map(doc => ({
+                    id: doc.$id,
+                    title: doc.title,
+                    description: doc.description,
+                    category: doc.category,
+                    thumbnail: doc.thumbnail,
+                    lessonsCount: doc.lessonsCount,
+                    studentsCount: doc.studentsCount,
+                    price: doc.price
+                }));
+
+                setFeaturedCourses(courses);
+            } catch (error) {
+                console.error('Failed to load featured courses:', error);
+                // Fallback to empty or show error
+                setFeaturedCourses([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeaturedCourses();
+    }, []);
 
     const stats = [
         { icon: PlayIcon, value: '500+', label: 'Video Lessons' },
@@ -202,7 +219,21 @@ export function Home() {
                     </Box>
 
                     <Grid container spacing={3}>
-                        {featuredCourses.map((course, index) => (
+                        {loading ? (
+                            // Loading Skeletons
+                            Array.from(new Array(3)).map((_, index) => (
+                                <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <Card>
+                                        <Skeleton variant="rectangular" height={200} />
+                                        <CardContent>
+                                            <Skeleton variant="text" height={32} sx={{ mb: 1 }} />
+                                            <Skeleton variant="text" width="60%" />
+                                            <Skeleton variant="text" width="40%" />
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))
+                        ) : featuredCourses.map((course, index) => (
                             <Grid key={course.id} size={{ xs: 12, sm: 6, md: 4 }}>
                                 <MotionBox
                                     initial={{ opacity: 0, y: 20 }}
@@ -214,6 +245,12 @@ export function Home() {
                                 </MotionBox>
                             </Grid>
                         ))}
+
+                        {!loading && featuredCourses.length === 0 && (
+                            <Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
+                                <Typography color="text.secondary">Belum ada kursus unggulan saat ini.</Typography>
+                            </Box>
+                        )}
                     </Grid>
 
                     <Box textAlign="center" mt={6}>

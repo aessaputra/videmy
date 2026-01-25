@@ -17,6 +17,7 @@ import { Home, Login, Register, Courses, CourseDetail } from './pages/public';
 
 // Student Pages
 import { Dashboard, Learn } from './pages/student';
+import { Profile } from './pages/dashboard/Profile';
 
 // Admin Pages
 import { ManageCourses, ManageUsers, CreateCourse, EditCourse } from './pages/admin';
@@ -77,6 +78,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
                     </ProtectedRoute>
                   }
                 />
