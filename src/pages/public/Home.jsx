@@ -140,17 +140,23 @@ export function Home() {
                                         fontSize: { xs: '2.5rem', md: '3.75rem' },
                                         lineHeight: 1.1,
                                         mb: 3,
-                                        background: theme.palette.mode === 'dark'
-                                            ? `linear-gradient(45deg, #FFF 30%, ${theme.palette.primary.light} 100%)`
-                                            : `linear-gradient(45deg, ${theme.palette.text.primary} 30%, ${theme.palette.primary.main} 100%)`,
+                                        background: `linear-gradient(to right, ${theme.vars?.palette.text.primary || theme.palette.text.primary}, ${theme.vars?.palette.primary.main || theme.palette.primary.main})`,
+
+                                        // Critical for Gradient Text
+                                        backgroundClip: 'text',
                                         WebkitBackgroundClip: 'text',
                                         WebkitTextFillColor: 'transparent',
+                                        color: 'transparent',
+
+                                        // Standard block display for Typography
+                                        display: 'block',
+                                        width: 'fit-content', // Wrap gradient to text width
                                     }}
                                 >
-                                    Tingkatkan Skill dengan{' '}
+                                    Tingkatkan Skill dengan <br />
                                     <Box component="span" sx={{
-                                        color: theme.palette.mode === 'dark' ? 'primary.light' : 'primary.main',
-                                        display: 'block'
+                                        display: 'inline', // Flow naturally with parent
+                                        // Inherited gradient properties work best on inline text
                                     }}>
                                         Mentoring Harian
                                     </Box>

@@ -83,7 +83,6 @@ export function CourseDetail() {
                 let allLessons = [];
 
                 if (moduleIds.length > 0) {
-                    // Appwrite limits Query.equal array size, but for a course < 100 modules it's fine
                     const lessonsRes = await databases.listDocuments(
                         DATABASE_ID,
                         COLLECTIONS.LESSONS,
@@ -93,6 +92,25 @@ export function CourseDetail() {
                         ]
                     );
                     allLessons = lessonsRes.documents;
+                }
+
+                // 4. Fetch User Progress (NEW)
+                let completedLessonIds = [];
+                if (user && allLessons.length > 0) {
+                    try {
+                        const progressRes = await databases.listDocuments(
+                            DATABASE_ID,
+                            COLLECTIONS.PROGRESS,
+                            [
+                                Query.equal('userId', user.$id),
+                                Query.equal('lessonId', allLessons.map(l => l.$id))
+                            ]
+                        );
+                        completedLessonIds = progressRes.documents.map(p => p.lessonId);
+                    } catch (e) {
+                        console.error('Failed to load progress:', e);
+                        // Continue without progress if fail
+                    }
                 }
 
                 // Stitch structure
@@ -105,7 +123,7 @@ export function CourseDetail() {
                             id: l.$id,
                             title: l.title,
                             duration: l.duration ? `${l.duration}m` : 'Video',
-                            completed: false
+                            completed: completedLessonIds.includes(l.$id) // Real progress
                         }))
                 }));
 
@@ -122,7 +140,7 @@ export function CourseDetail() {
                     lessonsCount: allLessons.length,
                     studentsCount: courseDoc.studentsCount || 0,
                     duration: 'Self-paced',
-                    isEnrolled: false, // TODO: Check enrollment
+                    isEnrolled: false,
                     modules: fullModules,
                 });
 
@@ -135,7 +153,7 @@ export function CourseDetail() {
         };
 
         fetchCourseData();
-    }, [id]);
+    }, [id, user]); // Added user dependency
 
     // Check enrollment status - Moved to top level to comply with Rules of Hooks
     useEffect(() => {
