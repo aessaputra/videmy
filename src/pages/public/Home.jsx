@@ -99,7 +99,7 @@ export function Home() {
             <Box
                 sx={{
                     position: 'relative',
-                    pt: { xs: 8, md: 16 },
+                    pt: { xs: 2, md: 2 },
                     pb: { xs: 8, md: 12 },
                     bgcolor: 'background.default',
                     '&::before': {
