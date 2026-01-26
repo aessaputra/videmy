@@ -64,7 +64,7 @@ export function CreateCourse() {
                 title: formData.title,
                 description: formData.description,
                 category: formData.category,
-                price: Number(formData.price),
+                price: parseFloat(formData.price) || 0,
                 isPublished: formData.isPublished,
                 instructorId: user.$id,
                 thumbnail: formData.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', // Default placeholder

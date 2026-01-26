@@ -79,75 +79,14 @@ export function ManageCourses() {
                 title: doc.title,
                 category: doc.category || 'Uncategorized',
                 lessonsCount: doc.lessonsCount || 0,
-                studentsCount: 0, // Will update below
+                studentsCount: doc.studentsCount || 0, // Use cached count
                 isPublished: doc.isPublished || false,
                 instructorId: doc.instructorId,
                 instructorName: doc.instructorName || doc.instructorId,
             }));
 
+            // Use mapped courses directly without secondary heavy fetching
             setCourses(mappedCourses);
-
-            // Fetch accurate stats for each course individually
-            // This is safer than a bulk query which might hit URL limits or array handling bugs
-            const coursesWithStats = await Promise.all(mappedCourses.map(async (course) => {
-                try {
-                    // Parallel Requests for this single course
-                    // 1. Get Enrollments (Students)
-                    // 2. Get Modules -> Lessons (Lessons)
-
-                    const [enrollmentsRes, modulesRes] = await Promise.all([
-                        databases.listDocuments(
-                            DATABASE_ID,
-                            COLLECTIONS.ENROLLMENTS,
-                            [
-                                Query.equal('courseId', course.id),
-                                Query.limit(1000) // Max limit to catch all students
-                            ]
-                        ),
-                        databases.listDocuments(
-                            DATABASE_ID,
-                            COLLECTIONS.MODULES,
-                            [
-                                Query.equal('courseId', course.id),
-                                Query.limit(1000)
-                            ]
-                        )
-                    ]);
-
-                    const studentCount = enrollmentsRes.total; // Use .total from Appwrite response!
-
-                    // Calc Lesson Count
-                    let lessonCount = 0;
-                    const modules = modulesRes.documents;
-                    if (modules.length > 0) {
-                        const moduleIds = modules.map(m => m.$id);
-                        // Fetch lessons for these modules
-                        // Need chunking if > 100 modules? Unlikely.
-                        const lessonsRes = await databases.listDocuments(
-                            DATABASE_ID,
-                            COLLECTIONS.LESSONS,
-                            [
-                                Query.equal('moduleId', moduleIds),
-                                Query.limit(1000)
-                            ]
-                        );
-                        lessonCount = lessonsRes.total; // Use .total!
-                    }
-
-                    return {
-                        ...course,
-                        studentsCount: studentCount,
-                        lessonsCount: lessonCount
-                    };
-
-                } catch (err) {
-                    console.error(`Failed to fetch stats for course ${course.id}`, err);
-                    return course; // Return original if fail
-                }
-            }));
-
-            // Final Update
-            setCourses(coursesWithStats);
 
         } catch (error) {
             console.error('Failed to fetch courses:', error);

@@ -108,7 +108,11 @@ export function EditCourse() {
                     youtubeUrl: newLessonData.youtubeUrl, // Schema expects youtubeUrl
                     duration: parseDuration(newLessonData.duration),
                     moduleId: newLessonData.moduleId,
-                    order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length
+                    duration: parseDuration(newLessonData.duration),
+                    moduleId: newLessonData.moduleId,
+                    order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length,
+                    content: '', // Default content
+                    isFree: false // Default locked
                 },
                 [
                     Permission.read(Role.any()),
@@ -116,20 +120,24 @@ export function EditCourse() {
                     Permission.delete(Role.user(user.$id))
                 ]
             );
-            setLessons([...lessons, res]);
+            setLessons(prev => [...prev, res]); // Functional update for safety
             setLessonDialog(false);
 
             // Update Course Lesson Count
+            // We use lessons.length + 1 because 'lessons' in this scope is the OLD state
+            const newCount = lessons.length + 1;
+            console.log(`[AddLesson] Updating count to: ${newCount}`);
+
             await databases.updateDocument(
                 DATABASE_ID,
                 COLLECTIONS.COURSES,
                 id,
-                { lessonsCount: lessons.length + 1 }
+                { lessonsCount: newCount }
             );
 
             toast.success('Lesson added');
         } catch (error) {
-            console.error(error);
+            console.error('[AddLesson] Error:', error);
             toast.error('Failed to add lesson');
         }
     };
@@ -189,6 +197,42 @@ export function EditCourse() {
         if (user && id) fetchCourseData();
     }, [id, user, navigate]);
 
+    // Self-Healing Effect: Sync Lesson Count if mismatched
+    useEffect(() => {
+        if (!loading && lessons.length > 0) {
+            // We need to check against the Initial loaded count, but that might be stale.
+            // Simplified check: If we have lessons loaded, trigger a check against DB or just blind update?
+            // Safer: Just update the count if we are sure we have ALL lessons.
+            // Since we fetched ALL lessons (limit 100 in previous step), we can verify.
+
+            // To be safe, we only do this if we are confident we have the full list.
+            // The limit was 100. If we have 100 lessons, we might be missing some, so don't auto-update.
+            if (lessons.length < 100) {
+                // We can't easily read the "old" count from state without causing loops or complex refs.
+                // Instead, we just ensure the DB is efficient by only updating if reasonable.
+                // Actually, a better place is inside the fetch finally block or a specific sync function.
+                // Let's rely on the user actions (Add/Delete) which are already consistent.
+                // BUT, to fix existing bad data:
+
+                const syncCount = async () => {
+                    try {
+                        // We don't have the 'original' doc count readily available in this scope easily 
+                        // unless we store it. Let's assume if we are editing, we want truth.
+                        await databases.updateDocument(
+                            DATABASE_ID,
+                            COLLECTIONS.COURSES,
+                            id,
+                            { lessonsCount: lessons.length }
+                        );
+                    } catch (e) {
+                        // ignore
+                    }
+                };
+                syncCount();
+            }
+        }
+    }, [loading, id]); // Only run once on load completion
+
     // --- Handlers: Course ---
     const handleCourseChange = (e) => {
         const { name, value, checked, type } = e.target;
@@ -206,7 +250,7 @@ export function EditCourse() {
                 title: formData.title,
                 description: formData.description,
                 category: formData.category,
-                price: Number(formData.price),
+                price: parseFloat(formData.price) || 0,
                 isPublished: formData.isPublished,
                 thumbnail: formData.thumbnail,
             });

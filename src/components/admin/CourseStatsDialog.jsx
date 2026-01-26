@@ -119,6 +119,27 @@ export default function CourseStatsDialog({ open, onClose, course }) {
 
             setStudents(mappedStudents);
 
+            // SELF-HEALING: Check if cached studentsCount matches real total
+            // If mismatch found, update the Course document silently
+            if (course.studentsCount !== enrollmentsRes.total) {
+                console.log(`[Self-Healing] Correcting student count for ${course.id}: ${course.studentsCount} -> ${enrollmentsRes.total}`);
+
+                try {
+                    await databases.updateDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.COURSES,
+                        course.id,
+                        { studentsCount: enrollmentsRes.total }
+                    );
+
+                    // Note: We can't easily update the parent 'course' prop from here without a huge refactor,
+                    // but next reload/refresh will show correct data.
+                    // For now, we trust the DB update happened.
+                } catch (updateErr) {
+                    console.error('[Self-Healing] Failed to update count:', updateErr);
+                }
+            }
+
         } catch (error) {
             console.error('Failed to fetch stats:', error);
             toast.error('Failed to load student list');

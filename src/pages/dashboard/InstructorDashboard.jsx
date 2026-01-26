@@ -52,32 +52,13 @@ export function InstructorDashboard() {
 
                 const myCourses = coursesRes.documents;
 
-                // Fetch accurate student counts via Enrollments (Frontend Join)
-                // Note: For production, this should be an aggregation or cloud function
-                const courseIds = myCourses.map(c => c.$id);
-                let realStudentCounts = {};
-
-                if (courseIds.length > 0) {
-                    const enrollmentsRes = await databases.listDocuments(
-                        DATABASE_ID,
-                        COLLECTIONS.ENROLLMENTS,
-                        [Query.equal('courseId', courseIds)]
-                    );
-
-                    // Count students per course
-                    enrollmentsRes.documents.forEach(enrollment => {
-                        const cid = enrollment.courseId;
-                        realStudentCounts[cid] = (realStudentCounts[cid] || 0) + 1;
-                    });
-                }
-
                 // Update courses with real count
                 const coursesWithStats = myCourses.map(c => ({
                     ...c,
-                    studentsCount: realStudentCounts[c.$id] || 0
+                    studentsCount: c.studentsCount || 0
                 }));
 
-                const totalStudents = Object.values(realStudentCounts).reduce((a, b) => a + b, 0);
+                const totalStudents = coursesWithStats.reduce((acc, course) => acc + (course.studentsCount || 0), 0);
 
                 setStats([
                     { label: 'Active Courses', value: coursesRes.total, icon: SchoolIcon, color: '#3b82f6' },
