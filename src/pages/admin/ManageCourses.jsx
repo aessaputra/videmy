@@ -26,10 +26,14 @@ import {
     Visibility as VisibilityIcon,
     VisibilityOff as VisibilityOffIcon,
     Search as SearchIcon,
+    People as PeopleIcon,
+    Launch as LaunchIcon,
 } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
+
+import CourseStatsDialog from '../../components/admin/CourseStatsDialog';
 
 /**
  * Manage Courses Page (Admin/Instructor)
@@ -43,6 +47,10 @@ export function ManageCourses() {
     // Demo courses (will be fetched from Appwrite later)
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Stats Dialog State
+    const [statsOpen, setStatsOpen] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState(null);
 
     useEffect(() => {
         if (user && hasRole(ROLES.INSTRUCTOR)) {
@@ -257,18 +265,33 @@ export function ManageCourses() {
                             {filteredCourses.map((course) => (
                                 <TableRow key={course.id} hover>
                                     <TableCell>
-                                        <Typography
-                                            component={Link}
-                                            to={`/courses/${course.id}`}
-                                            sx={{
-                                                fontWeight: 500,
-                                                color: 'text.primary',
-                                                textDecoration: 'none',
-                                                '&:hover': { color: 'primary.main' },
-                                            }}
-                                        >
-                                            {course.title}
-                                        </Typography>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <Typography
+                                                variant="body1"
+                                                onClick={() => {
+                                                    setSelectedCourse(course);
+                                                    setStatsOpen(true);
+                                                }}
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    color: 'primary.main',
+                                                    cursor: 'pointer',
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                {course.title}
+                                            </Typography>
+                                            <IconButton
+                                                component={Link}
+                                                to={`/courses/${course.id}`}
+                                                target="_blank"
+                                                size="small"
+                                                title="View Public Page"
+                                                sx={{ opacity: 0.5, '&:hover': { opacity: 1 } }}
+                                            >
+                                                <LaunchIcon fontSize="small" />
+                                            </IconButton>
+                                        </Stack>
                                     </TableCell>
                                     {hasRole(ROLES.ADMIN) && (
                                         <TableCell>
@@ -339,6 +362,13 @@ export function ManageCourses() {
                     )}
                 </TableContainer>
             </Container>
+
+            {/* Stats/Manage Dialog */}
+            <CourseStatsDialog
+                open={statsOpen}
+                onClose={() => setStatsOpen(false)}
+                course={selectedCourse}
+            />
         </Box>
     );
 }

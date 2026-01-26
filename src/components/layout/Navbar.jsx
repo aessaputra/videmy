@@ -169,7 +169,7 @@ export function Navbar() {
                     <CardHeader
                         avatar={
                             <Avatar
-                                src={user?.prefs?.avatar}
+                                src={user?.avatar}
                                 alt={user?.name}
                                 sx={{
                                     bgcolor: 'primary.main',
@@ -509,7 +509,7 @@ export function Navbar() {
                                         }}
                                     >
                                         <Avatar
-                                            src={user?.prefs?.avatar}
+                                            src={user?.avatar}
                                             alt={user?.name}
                                             sx={{
                                                 bgcolor: 'primary.main',

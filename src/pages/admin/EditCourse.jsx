@@ -209,7 +209,6 @@ export function EditCourse() {
                 price: Number(formData.price),
                 isPublished: formData.isPublished,
                 thumbnail: formData.thumbnail,
-                thumbnail: formData.thumbnail,
             });
             toast.success('Course details saved');
         } catch (error) {

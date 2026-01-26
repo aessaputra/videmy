@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
-import { account, storage, ID, STORAGE_BUCKET_ID, Permission, Role } from '../../lib/appwrite';
+import { account, databases, storage, ID, STORAGE_BUCKET_ID, Permission, Role, DATABASE_ID, COLLECTIONS, Query } from '../../lib/appwrite';
 
 function TabPanel({ children, value, index, ...other }) {
     return (
@@ -152,7 +152,7 @@ export function Profile() {
                 await account.updateName(profileData.name);
             }
 
-            // Update Prefs (Bio & Avatar)
+            // Update Prefs (Bio & Avatar) - Legacy/Auth Store
             const prefs = {
                 ...user.prefs,
                 bio: profileData.bio,
@@ -160,6 +160,46 @@ export function Profile() {
                 role: user.prefs?.role // Persist role
             };
             await account.updatePrefs(prefs);
+
+            // SYNC TO PUBLIC PROFILE (Database)
+            // Wrap in try-catch so it doesn't block the main update if DB schema is strict/missing attributes
+            // SYNC TO PUBLIC PROFILE (Database)
+            // DEBUG MODE: We show explicit errors now
+            try {
+                console.log('Attempting to sync to Public DB. User ID:', user.$id);
+
+                // 1. Find the document
+                const userDocs = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.USERS,
+                    [Query.equal('userId', user.$id)]
+                );
+
+                console.log('Found public docs:', userDocs.documents.length);
+
+                if (userDocs.documents.length > 0) {
+                    const docId = userDocs.documents[0].$id;
+                    console.log('Updating Document ID:', docId, 'with Avatar:', profileData.avatar);
+
+                    await databases.updateDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.USERS,
+                        docId,
+                        {
+                            name: profileData.name,
+                            avatar: profileData.avatar
+                        }
+                    );
+                    console.log('Sync Success!');
+                } else {
+                    console.warn('No public profile document found for user:', user.$id);
+                    toast.warning('Warning: Public profile not found. Avatar might not be visible to others.');
+                }
+            } catch (dbError) {
+                console.error('Sync failed:', dbError);
+                toast.error(`Public Profile Sync Failed: ${dbError.message}`);
+                // We do NOT re-throw, to allow local save to complete.
+            }
 
             toast.success('Profile updated successfully');
             await refreshUser(); // Update global context immediately

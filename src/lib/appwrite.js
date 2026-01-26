@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID, Query, Permission, Role } from 'appwrite';
+import { Client, Account, Databases, Storage, Avatars, ID, Query, Permission, Role } from 'appwrite';
 
 /**
  * Appwrite Client Configuration
@@ -10,14 +10,19 @@ import { Client, Account, Databases, Storage, ID, Query, Permission, Role } from
 // Initialize the Appwrite client
 export const client = new Client();
 
+// Export Configuration Constants
+export const ENDPOINT = import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
+export const PROJECT_ID = import.meta.env.VITE_APPWRITE_PROJECT_ID || '';
+
 client
-    .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-    .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '');
+    .setEndpoint(ENDPOINT)
+    .setProject(PROJECT_ID);
 
 // Initialize Appwrite services
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const avatars = new Avatars(client);
 
 // Export utilities
 export { ID, Query, Permission, Role };

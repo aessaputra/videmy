@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { account, databases, ID, DATABASE_ID, COLLECTIONS, Query } from '../lib/appwrite';
+import { client, account, databases, avatars, ID, DATABASE_ID, COLLECTIONS, Query, ENDPOINT, PROJECT_ID } from '../lib/appwrite';
 
 /**
  * Authentication Context
@@ -89,7 +89,8 @@ export function AuthProvider({ children }) {
                 ...userData,
                 role: userProfile?.role || getUserRole(userData),
                 status: userProfile?.status || 'active',
-                profileId: userProfile?.$id
+                profileId: userProfile?.$id,
+                avatar: userProfile?.avatar || userData?.prefs?.avatar || `${ENDPOINT}/avatars/initials?name=${encodeURIComponent(userData.name)}&project=${PROJECT_ID}` // Robust Fallback (Appwrite Initials)
             });
         } catch (error) {
             // User not logged in
@@ -209,7 +210,6 @@ export function AuthProvider({ children }) {
         register,
         login,
         logout,
-        hasRole,
         hasRole,
         ROLES,
         refreshUser: init, // Expose init to allow manual refresh
