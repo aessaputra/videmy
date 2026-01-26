@@ -95,7 +95,17 @@ export function CourseDetail() {
                     allLessons = lessonsRes.documents;
                 }
 
-                // 4. Fetch User Progress (NEW)
+                // 4. Fetch Real Student Count (Live)
+                const enrollmentsCountRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.ENROLLMENTS,
+                    [
+                        Query.equal('courseId', id),
+                        Query.limit(1) // We rely on 'total' property
+                    ]
+                );
+
+                // 4b. User Progress (Existing)
                 let completedLessonIds = [];
                 if (user && allLessons.length > 0) {
                     try {
@@ -140,7 +150,7 @@ export function CourseDetail() {
                         avatar: 'VI',
                     },
                     lessonsCount: allLessons.length,
-                    studentsCount: courseDoc.studentsCount || 0,
+                    studentsCount: enrollmentsCountRes.total || 0,
                     duration: 'Self-paced',
                     isEnrolled: false,
                     modules: fullModules,

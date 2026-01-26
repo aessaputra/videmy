@@ -20,7 +20,7 @@ import { Home, Login, Register, Courses, CourseDetail } from './pages/public';
 import { Dashboard, Learn } from './pages/student';
 import { Profile } from './pages/dashboard/Profile';
 import { Settings } from './pages/dashboard/Settings';
-import { Analytics } from './pages/dashboard/Analytics';
+
 
 // Admin Pages
 import { ManageCourses, ManageUsers, CreateCourse, EditCourse } from './pages/admin';
@@ -116,14 +116,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="/admin/analytics"
-                  element={
-                    <ProtectedRoute roles={[ROLES.ADMIN]}>
-                      <Analytics />
-                    </ProtectedRoute>
-                  }
-                />
+
 
                 {/* Common Authenticated Routes */}
                 <Route path="/settings" element={<Settings />} />

@@ -24,7 +24,7 @@ import {
     Settings as SettingsIcon,
     ChevronLeft as ChevronLeftIcon,
     ChevronRight as ChevronRightIcon,
-    Analytics as AnalyticsIcon,
+
 } from '@mui/icons-material';
 import { useAuth, ROLES } from '../../context/AuthContext';
 import videmyLogo from '../../assets/videmy-logo.png';
@@ -67,12 +67,7 @@ export function DashboardSidebar({ open, onToggle, mobileOpen, onMobileClose }) 
             path: '/admin/users',
             roles: [ROLES.ADMIN],
         },
-        {
-            title: 'Analytics',
-            icon: <AnalyticsIcon />,
-            path: '/admin/analytics',
-            roles: [ROLES.ADMIN],
-        },
+
         { divider: true, roles: [ROLES.STUDENT, ROLES.INSTRUCTOR, ROLES.ADMIN] },
         {
             title: 'Profile',

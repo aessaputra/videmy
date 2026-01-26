@@ -118,6 +118,15 @@ export function EditCourse() {
             );
             setLessons([...lessons, res]);
             setLessonDialog(false);
+
+            // Update Course Lesson Count
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.COURSES,
+                id,
+                { lessonsCount: lessons.length + 1 }
+            );
+
             toast.success('Lesson added');
         } catch (error) {
             console.error(error);
@@ -259,6 +268,15 @@ export function EditCourse() {
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.LESSONS, lessonId);
             setLessons(lessons.filter(l => l.$id !== lessonId));
+
+            // Update Course Lesson Count
+            await databases.updateDocument(
+                DATABASE_ID,
+                COLLECTIONS.COURSES,
+                id,
+                { lessonsCount: Math.max(0, lessons.length - 1) }
+            );
+
             toast.success('Lesson deleted');
         } catch (error) {
             toast.error('Failed to delete lesson');

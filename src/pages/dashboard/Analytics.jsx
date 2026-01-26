@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Paper, Stack } from '@mui/material';
 import {
     Analytics as AnalyticsIcon,
@@ -6,7 +7,7 @@ import {
     School as SchoolIcon,
     AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
-import { ComingSoon } from '../../components/common/ComingSoon';
+import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 /**
  * Analytics Page
@@ -15,13 +16,39 @@ import { ComingSoon } from '../../components/common/ComingSoon';
  * Currently showing placeholder with preview of upcoming features.
  */
 export function Analytics() {
-    // Placeholder stats for visual preview
-    const previewStats = [
-        { label: 'Total Users', value: '—', icon: <PeopleIcon />, color: '#3b82f6' },
-        { label: 'Total Courses', value: '—', icon: <SchoolIcon />, color: '#10b981' },
-        { label: 'Total Revenue', value: '—', icon: <MoneyIcon />, color: '#f59e0b' },
-        { label: 'Growth Rate', value: '—', icon: <TrendingUpIcon />, color: '#8b5cf6' },
-    ];
+    const [stats, setStats] = useState([
+        { label: 'Total Users', value: 0, icon: <PeopleIcon />, color: '#3b82f6' },
+        { label: 'Total Courses', value: 0, icon: <SchoolIcon />, color: '#10b981' },
+        { label: 'Active Enrollments', value: 0, icon: <SchoolIcon />, color: '#f59e0b' },
+        { label: 'Growth Rate', value: 'N/A', icon: <TrendingUpIcon />, color: '#8b5cf6' },
+    ]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAnalytics = async () => {
+            try {
+                // Parallel fetching for performance
+                const [usersRes, coursesRes, enrollRes] = await Promise.all([
+                    databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS, [Query.limit(1)]), // We just need 'total'
+                    databases.listDocuments(DATABASE_ID, COLLECTIONS.COURSES, [Query.limit(1)]),
+                    databases.listDocuments(DATABASE_ID, COLLECTIONS.ENROLLMENTS, [Query.limit(1)])
+                ]);
+
+                setStats([
+                    { label: 'Total Users', value: usersRes.total, icon: <PeopleIcon />, color: '#3b82f6' },
+                    { label: 'Total Courses', value: coursesRes.total, icon: <SchoolIcon />, color: '#10b981' },
+                    { label: 'Total Enrollments', value: enrollRes.total, icon: <AnalyticsIcon />, color: '#f59e0b' },
+                    { label: 'Platform Status', value: 'Active', icon: <TrendingUpIcon />, color: '#8b5cf6' },
+                ]);
+            } catch (error) {
+                console.error('Analytics load failed:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAnalytics();
+    }, []);
 
     return (
         <Box>
@@ -29,12 +56,12 @@ export function Analytics() {
                 Analytics Dashboard
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                Track your platform performance, user engagement, and revenue.
+                Real-time platform performance metrics.
             </Typography>
 
-            {/* Preview Stats Grid */}
+            {/* Stats Grid */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                {previewStats.map((stat, index) => (
+                {stats.map((stat, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <Paper
                             sx={{
@@ -42,7 +69,6 @@ export function Analytics() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 2,
-                                opacity: 0.6,
                                 position: 'relative',
                                 overflow: 'hidden',
                             }}
@@ -62,9 +88,13 @@ export function Analytics() {
                                 {stat.icon}
                             </Box>
                             <Box>
-                                <Typography variant="h5" fontWeight={700}>
-                                    {stat.value}
-                                </Typography>
+                                {loading ? (
+                                    <Typography variant="h5" fontWeight={700}>...</Typography>
+                                ) : (
+                                    <Typography variant="h5" fontWeight={700}>
+                                        {stat.value}
+                                    </Typography>
+                                )}
                                 <Typography variant="body2" color="text.secondary">
                                     {stat.label}
                                 </Typography>
@@ -74,16 +104,15 @@ export function Analytics() {
                 ))}
             </Grid>
 
-            {/* Coming Soon Message */}
-            <ComingSoon
-                title="Analytics Coming Soon"
-                description="We're building powerful analytics tools to help you understand your platform's performance, track student engagement, and grow your business."
-                icon={<AnalyticsIcon />}
-                showBackButton={true}
-                backTo="/dashboard"
-            />
+            <Box sx={{ p: 4, bgcolor: 'background.paper', borderRadius: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }}>
+                <Typography color="text.secondary">
+                    More detailed charts and graphs coming in V2.
+                </Typography>
+            </Box>
         </Box>
     );
 }
 
 export default Analytics;
+
+
