@@ -32,7 +32,7 @@ import {
     School as SchoolIcon,
     Close as CloseIcon
 } from '@mui/icons-material';
-import { databases, avatars, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
+import { databases, avatars, COLLECTIONS, DATABASE_ID, Query, getUserAvatar } from '../../lib/appwrite';
 import { toast } from 'sonner';
 
 function TabPanel({ children, value, index, ...other }) {
@@ -112,10 +112,8 @@ export default function CourseStatsDialog({ open, onClose, course }) {
                     enrolledAt: enrollment.enrolledAt,
                     enrolledAt: enrollment.enrolledAt,
                     status: profile?.status || 'active',
-                    // Use Custom Avatar (DB) OR Fallback to Appwrite Initials
-                    avatar: profile?.avatar
-                        ? profile.avatar
-                        : avatars.getInitials(profile?.name || 'U').toString()
+                    // Use Centralized Helper for Avatar (Custom + Fallback + Optimization)
+                    avatar: getUserAvatar(profile)
                 };
             });
 

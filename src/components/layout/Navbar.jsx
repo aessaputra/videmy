@@ -172,7 +172,6 @@ export function Navbar() {
                                 src={user?.avatar}
                                 alt={user?.name}
                                 sx={{
-                                    bgcolor: 'primary.main',
                                     width: 56,
                                     height: 56,
                                     fontSize: '1.4rem',
@@ -512,7 +511,6 @@ export function Navbar() {
                                             src={user?.avatar}
                                             alt={user?.name}
                                             sx={{
-                                                bgcolor: 'primary.main',
                                                 width: 36,
                                                 height: 36,
                                                 fontWeight: 600,

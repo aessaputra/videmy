@@ -31,7 +31,7 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
+import { databases, COLLECTIONS, DATABASE_ID, Query, ID, getUserAvatar } from '../../lib/appwrite';
 
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
@@ -138,6 +138,32 @@ export function CourseDetail() {
                         }))
                 }));
 
+                // 1b. Fetch Instructor Details
+                let instructorData = {
+                    name: 'Unknown Instructor',
+                    avatar: '',
+                };
+
+                if (courseDoc.instructorId) {
+                    try {
+                        const instructorDocs = await databases.listDocuments(
+                            DATABASE_ID,
+                            COLLECTIONS.USERS,
+                            [Query.equal('userId', courseDoc.instructorId)]
+                        );
+
+                        if (instructorDocs.documents.length > 0) {
+                            const instDoc = instructorDocs.documents[0];
+                            instructorData = {
+                                name: instDoc.name,
+                                avatar: getUserAvatar(instDoc)
+                            };
+                        }
+                    } catch (err) {
+                        console.warn('Failed to fetch instructor:', err);
+                    }
+                }
+
                 setCourse({
                     id: courseDoc.$id,
                     title: courseDoc.title,
@@ -145,10 +171,7 @@ export function CourseDetail() {
                     category: courseDoc.category || 'General',
                     thumbnail: courseDoc.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200',
                     instructorId: courseDoc.instructorId, // For owner detection
-                    instructor: {
-                        name: 'Videmy Instructor',
-                        avatar: 'VI',
-                    },
+                    instructor: instructorData,
                     lessonsCount: allLessons.length,
                     studentsCount: enrollmentsCountRes.total || 0,
                     duration: 'Self-paced',
@@ -234,7 +257,28 @@ export function CourseDetail() {
                 }
             );
 
-            setCourse(prev => ({ ...prev, isEnrolled: true }));
+            setCourse(prev => ({
+                ...prev,
+                isEnrolled: true,
+                studentsCount: (prev.studentsCount || 0) + 1
+            }));
+
+            // Sync Student Count to Cache Field in Database (Best Practice)
+            // Use live count (total) + 1 as the new source of truth
+            try {
+                await databases.updateDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.COURSES,
+                    course.id,
+                    {
+                        studentsCount: (course.studentsCount || 0) + 1
+                    }
+                );
+            } catch (updateError) {
+                console.warn('Failed to update cached student count:', updateError);
+                // Non-blocking: UI is already updated
+            }
+
             toast.success('Successfully enrolled!');
             handleStartLearning();
 
@@ -309,8 +353,11 @@ export function CourseDetail() {
 
                             {/* Instructor */}
                             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
-                                <Avatar sx={{ bgcolor: 'primary.main' }}>
-                                    {course.instructor.avatar}
+                                <Avatar
+                                    src={course.instructor.avatar}
+                                    alt={course.instructor.name}
+                                >
+                                    {course.instructor.name.charAt(0)}
                                 </Avatar>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary">
@@ -337,6 +384,7 @@ export function CourseDetail() {
                                             onClick={handleStartLearning}
                                             startIcon={<PreviewIcon />}
                                             color="secondary"
+                                            sx={{ width: { xs: '100%', md: 'auto' } }}
                                         >
                                             {isCourseOwner ? 'Preview Your Course' : 'Admin Preview'}
                                         </Button>
@@ -349,6 +397,7 @@ export function CourseDetail() {
                                             size="large"
                                             onClick={handleStartLearning}
                                             startIcon={<PlayIcon />}
+                                            sx={{ width: { xs: '100%', md: 'auto' } }}
                                         >
                                             Continue Learning
                                         </Button>
@@ -361,6 +410,7 @@ export function CourseDetail() {
                                             size="large"
                                             onClick={handleEnroll}
                                             startIcon={<PlayIcon />}
+                                            sx={{ width: { xs: '100%', md: 'auto' } }}
                                         >
                                             Enroll Now - Free
                                         </Button>

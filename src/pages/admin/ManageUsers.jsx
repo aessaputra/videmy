@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { ROLES, useAuth } from '../../context/AuthContext';
-import { databases, DATABASE_ID, COLLECTIONS, Query } from '../../lib/appwrite';
+import { databases, DATABASE_ID, COLLECTIONS, Query, getUserAvatar } from '../../lib/appwrite';
 
 /**
  * Manage Users Page (Admin Only)
@@ -66,6 +66,7 @@ export function ManageUsers() {
                 email: doc.email,
                 role: doc.role,
                 status: doc.status || 'active',
+                avatar: doc.avatar // Ensure avatar is mapped from DB
             }));
             setUsers(mappedUsers);
         } catch (error) {
@@ -207,7 +208,11 @@ export function ManageUsers() {
                                     <TableRow key={user.id} hover>
                                         <TableCell>
                                             <Stack direction="row" spacing={1.5} alignItems="center">
-                                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                                                <Avatar
+                                                    src={getUserAvatar(user)}
+                                                    alt={user.name}
+                                                    sx={{ width: 32, height: 32 }}
+                                                >
                                                     {user.name.charAt(0).toUpperCase()}
                                                 </Avatar>
                                                 <Typography fontWeight={500}>{user.name}</Typography>

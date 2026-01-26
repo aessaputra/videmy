@@ -166,8 +166,8 @@ export function DashboardTopBar({ sidebarOpen, sidebarWidth, onMenuClick }) {
                                 sx={{
                                     width: 36,
                                     height: 36,
-                                    bgcolor: 'primary.main',
                                     fontSize: '0.875rem',
+                                    fontWeight: 600,
                                 }}
                             >
                                 {getInitials(user?.name)}

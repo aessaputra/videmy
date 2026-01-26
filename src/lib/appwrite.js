@@ -43,4 +43,52 @@ export const COLLECTIONS = {
 // Storage Bucket ID
 export const STORAGE_BUCKET_ID = '6975bc7500182fd9ac87';
 
+/**
+ * Get User Avatar URL
+ * 
+ * Returns an optimized avatar URL:
+ * 1. Custom uploaded avatar (optimized via getFilePreview)
+ * 2. Fallback to Appwrite Initials
+ * 
+ * @param {Object} user - User profile document or account object
+ * @returns {string} Avatar URL
+ */
+export const getUserAvatar = (user) => {
+    if (!user) return '';
+
+    // 1. Try Custom Avatar (File ID stored in profile OR prefs)
+    const avatarId = user.avatar || user.prefs?.avatar;
+    if (avatarId) {
+        try {
+            // Check if it's potentially already a full URL (legacy/external)
+            if (avatarId.startsWith('http')) {
+                return avatarId;
+            }
+
+            // Return optimized preview for stored file ID
+            // Width: 200, Height: 200, Gravity: Center, Quality: 90
+            return storage.getFilePreview(
+                STORAGE_BUCKET_ID,
+                avatarId,
+                200,
+                200,
+                'center',
+                90
+            ).href;
+        } catch (error) {
+            console.warn('Error generating avatar preview:', error);
+        }
+    }
+
+    // 2. Fallback: Appwrite Initials
+    try {
+        const initialsUrl = avatars.getInitials(user.name);
+        // Handle both URL object (SDK v14+) and String (older SDKs)
+        return initialsUrl.href ? initialsUrl.href : initialsUrl;
+    } catch (error) {
+        console.warn('Error generating initials:', error);
+        return '';
+    }
+};
+
 export default client;

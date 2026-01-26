@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
-import { account, databases, storage, ID, STORAGE_BUCKET_ID, Permission, Role, DATABASE_ID, COLLECTIONS, Query } from '../../lib/appwrite';
+import { account, databases, storage, ID, STORAGE_BUCKET_ID, Permission, Role, DATABASE_ID, COLLECTIONS, Query, getUserAvatar } from '../../lib/appwrite';
 
 function TabPanel({ children, value, index, ...other }) {
     return (
@@ -164,7 +164,6 @@ export function Profile() {
             // SYNC TO PUBLIC PROFILE (Database)
             // Wrap in try-catch so it doesn't block the main update if DB schema is strict/missing attributes
             // SYNC TO PUBLIC PROFILE (Database)
-            // DEBUG MODE: We show explicit errors now
             try {
                 console.log('Attempting to sync to Public DB. User ID:', user.$id);
 
@@ -282,7 +281,13 @@ export function Profile() {
                                         }
                                     >
                                         <Avatar
-                                            src={profileData.avatar}
+                                            src={
+                                                // If raw avatar value matches initial prefs, use the Context URL (Safe/Verified)
+                                                // Otherwise (new upload), use the helper to generate preview
+                                                profileData.avatar === (user.prefs?.avatar || '')
+                                                    ? user.avatar
+                                                    : getUserAvatar({ ...user, avatar: profileData.avatar })
+                                            }
                                             alt={profileData.name}
                                             sx={{ width: 120, height: 120, fontSize: 40 }}
                                         >
@@ -384,7 +389,7 @@ export function Profile() {
                     </TabPanel>
                 </Paper>
             </Container>
-        </Box>
+        </Box >
     );
 }
 
