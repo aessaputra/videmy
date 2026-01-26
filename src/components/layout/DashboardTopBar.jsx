@@ -233,28 +233,6 @@ export function DashboardTopBar({ sidebarOpen, sidebarWidth, onMenuClick }) {
 
                         <Divider />
 
-                        <MenuItem
-                            component={Link}
-                            to="/profile"
-                        >
-                            <ListItemIcon>
-                                <PersonIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Profile</ListItemText>
-                        </MenuItem>
-
-                        <MenuItem
-                            component={Link}
-                            to="/settings"
-                        >
-                            <ListItemIcon>
-                                <SettingsIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Settings</ListItemText>
-                        </MenuItem>
-
-                        <Divider />
-
                         <MenuItem onClick={handleLogout}>
                             <ListItemIcon>
                                 <LogoutIcon fontSize="small" color="error" />

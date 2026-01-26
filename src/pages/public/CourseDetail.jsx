@@ -25,6 +25,7 @@ import {
     AccessTime as TimeIcon,
     ExpandMore as ExpandMoreIcon,
     CheckCircle as CheckIcon,
+    Visibility as PreviewIcon,
 } from '@mui/icons-material';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
@@ -133,6 +134,7 @@ export function CourseDetail() {
                     description: courseDoc.description,
                     category: courseDoc.category || 'General',
                     thumbnail: courseDoc.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200',
+                    instructorId: courseDoc.instructorId, // For owner detection
                     instructor: {
                         name: 'Videmy Instructor',
                         avatar: 'VI',
@@ -310,26 +312,51 @@ export function CourseDetail() {
                                 </Box>
                             </Stack>
 
-                            {/* CTA */}
-                            {course.isEnrolled ? (
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    onClick={handleStartLearning}
-                                    startIcon={<PlayIcon />}
-                                >
-                                    Continue Learning
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    onClick={handleEnroll}
-                                    startIcon={<PlayIcon />}
-                                >
-                                    Enroll Now - Free
-                                </Button>
-                            )}
+                            {/* CTA - Role-based access control */}
+                            {(() => {
+                                // Best Practice: Owner/Admin get Preview access without enrollment
+                                const isCourseOwner = user && course?.instructorId === user.$id;
+                                const isAdmin = user?.role === 'admin';
+
+                                if (isCourseOwner || isAdmin) {
+                                    // Owner/Admin: Preview without enrollment
+                                    return (
+                                        <Button
+                                            variant="outlined"
+                                            size="large"
+                                            onClick={handleStartLearning}
+                                            startIcon={<PreviewIcon />}
+                                            color="secondary"
+                                        >
+                                            {isCourseOwner ? 'Preview Your Course' : 'Admin Preview'}
+                                        </Button>
+                                    );
+                                } else if (course.isEnrolled) {
+                                    // Enrolled student: Continue
+                                    return (
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            onClick={handleStartLearning}
+                                            startIcon={<PlayIcon />}
+                                        >
+                                            Continue Learning
+                                        </Button>
+                                    );
+                                } else {
+                                    // Not enrolled: Show enroll button
+                                    return (
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            onClick={handleEnroll}
+                                            startIcon={<PlayIcon />}
+                                        >
+                                            Enroll Now - Free
+                                        </Button>
+                                    );
+                                }
+                            })()}
                         </MotionBox>
                     </Grid>
 

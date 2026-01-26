@@ -55,12 +55,6 @@ export function DashboardSidebar({ open, onToggle, mobileOpen, onMobileClose }) 
         },
         { divider: true, roles: [ROLES.INSTRUCTOR, ROLES.ADMIN] },
         {
-            title: 'Create Course',
-            icon: <AddIcon />,
-            path: '/admin/courses/new',
-            roles: [ROLES.INSTRUCTOR, ROLES.ADMIN],
-        },
-        {
             title: 'Manage Courses',
             icon: <CoursesIcon />,
             path: '/admin/courses',

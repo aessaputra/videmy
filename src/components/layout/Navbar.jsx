@@ -269,12 +269,12 @@ export function Navbar() {
                             color="text.secondary"
                             sx={{ px: 1.5, py: 1, display: 'block', fontSize: '0.65rem', letterSpacing: 1.5 }}
                         >
-                            Account
+                            Quick Access
                         </Typography>
                         <ListItem disablePadding sx={{ mb: 0.5 }}>
                             <ListItemButton
                                 component={NavLink}
-                                to="/profile"
+                                to="/dashboard"
                                 onClick={handleDrawerToggle}
                                 sx={{
                                     borderRadius: 2,
@@ -288,33 +288,10 @@ export function Navbar() {
                                 }}
                             >
                                 <ListItemIcon sx={{ minWidth: 44 }}>
-                                    <PersonIcon />
+                                    <DashboardIcon />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary="Profile"
-                                    primaryTypographyProps={{ fontWeight: 500 }}
-                                />
-                            </ListItemButton>
-                        </ListItem>
-                        <ListItem disablePadding sx={{ mb: 0.5 }}>
-                            <ListItemButton
-                                onClick={handleDrawerToggle}
-                                sx={{
-                                    borderRadius: 2,
-                                    minHeight: 48,
-                                    px: 2,
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        bgcolor: 'action.hover',
-                                        transform: 'translateX(4px)',
-                                    },
-                                }}
-                            >
-                                <ListItemIcon sx={{ minWidth: 44 }}>
-                                    <SettingsIcon />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Settings"
+                                    primary="Dashboard"
                                     primaryTypographyProps={{ fontWeight: 500 }}
                                 />
                             </ListItemButton>
@@ -610,30 +587,6 @@ export function Navbar() {
                                                 <DashboardIcon fontSize="small" />
                                             </ListItemIcon>
                                             Dashboard
-                                        </MenuItem>
-
-                                        <MenuItem
-                                            component={Link}
-                                            to="/profile"
-                                            onClick={handleUserMenuClose}
-                                            sx={{ py: 1.5 }}
-                                        >
-                                            <ListItemIcon>
-                                                <PersonIcon fontSize="small" />
-                                            </ListItemIcon>
-                                            Profile
-                                        </MenuItem>
-
-                                        <MenuItem
-                                            component={Link}
-                                            to="/profile"
-                                            onClick={handleUserMenuClose}
-                                            sx={{ py: 1.5 }}
-                                        >
-                                            <ListItemIcon>
-                                                <SettingsIcon fontSize="small" />
-                                            </ListItemIcon>
-                                            Settings
                                         </MenuItem>
 
                                         <Divider />

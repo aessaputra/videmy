@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     Box,
     Container,
@@ -41,8 +41,9 @@ import { VideoPlayer } from '../../components/course';
  */
 export function Learn() {
     const { courseId, lessonId } = useParams();
+    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -50,6 +51,7 @@ export function Learn() {
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [completedLessons, setCompletedLessons] = useState([]);
+    const [accessDenied, setAccessDenied] = useState(false);
 
     // Reset sidebar state on screen resize
     useEffect(() => {
@@ -63,11 +65,45 @@ export function Learn() {
     useEffect(() => {
         const fetchCourseData = async () => {
             if (!courseId) return;
+
+            // Access Control Check - MUST be logged in
+            if (!isAuthenticated || !user) {
+                toast.error('Please login to access course content');
+                navigate('/login');
+                return;
+            }
+
             try {
-                // 1. Fetch Course
+                // 1. Fetch Course FIRST (needed for owner check)
                 const courseDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, courseId);
 
-                // 2. Fetch Modules
+                // 2. ROLE-BASED ACCESS CONTROL
+                // Best Practice: Owner/Admin can access without enrollment
+                const isCourseOwner = courseDoc.instructorId === user.$id;
+                const isAdmin = user.role === 'admin';
+
+                // Check enrollment for non-owner/non-admin users
+                let isEnrolled = false;
+                if (!isCourseOwner && !isAdmin) {
+                    const enrollmentRes = await databases.listDocuments(
+                        DATABASE_ID,
+                        COLLECTIONS.ENROLLMENTS,
+                        [
+                            Query.equal('userId', user.$id),
+                            Query.equal('courseId', courseId)
+                        ]
+                    );
+                    isEnrolled = enrollmentRes.documents.length > 0;
+
+                    if (!isEnrolled) {
+                        // Not enrolled, not owner, not admin - deny access
+                        setAccessDenied(true);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // 3. Fetch Modules (user has access)
                 const modulesRes = await databases.listDocuments(
                     DATABASE_ID,
                     COLLECTIONS.MODULES,
@@ -133,11 +169,57 @@ export function Learn() {
         };
 
         fetchCourseData();
-    }, [courseId, user]);
+    }, [courseId, user, isAuthenticated, navigate]);
 
     // Loading State
     if (loading) {
         return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></Box>;
+    }
+
+    // Access Denied State - User not enrolled
+    if (accessDenied) {
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '100vh',
+                    gap: 3,
+                    p: 4,
+                    textAlign: 'center',
+                    bgcolor: 'background.default'
+                }}
+            >
+                <Typography variant="h1" sx={{ fontSize: '4rem' }}>🔒</Typography>
+                <Typography variant="h4" fontWeight={700} color="text.primary">
+                    Access Denied
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400 }}>
+                    You need to enroll in this course to access the content.
+                    Please enroll first to start learning.
+                </Typography>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        component={Link}
+                        to={`/courses/${courseId}`}
+                    >
+                        Enroll Now
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="large"
+                        component={Link}
+                        to="/dashboard"
+                    >
+                        Back to Dashboard
+                    </Button>
+                </Stack>
+            </Box>
+        );
     }
 
     if (!course) return <Box sx={{ p: 4 }}>Course loading failed</Box>;
