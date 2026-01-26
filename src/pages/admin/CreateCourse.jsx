@@ -70,7 +70,6 @@ export function CreateCourse() {
                 thumbnail: formData.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800', // Default placeholder
                 studentsCount: 0,
                 lessonsCount: 0,
-                lessonsCount: 0,
             };
 
             await databases.createDocument(

@@ -1,20 +1,16 @@
 import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import SignInCard from '../../components/auth/SignInCard';
 import Content from '../../components/auth/Content';
 
 export function Login() {
     return (
-        <Grid container component="main" sx={{ height: '100vh', overflow: 'hidden' }}>
+        <Box component="main" sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <CssBaseline enableColorScheme />
 
             {/* Left Side - Image/Content (30%) */}
-            <Grid
-                item
-                xs={false}
-                md={false} /* Disable auto-width */
+            <Box
                 sx={{
                     display: { xs: 'none', md: 'block' },
                     width: { md: '30%' },
@@ -24,13 +20,10 @@ export function Login() {
                 }}
             >
                 <Content />
-            </Grid>
+            </Box>
 
             {/* Right Side - Login Form (70%) */}
-            <Grid
-                item
-                xs={12}
-                md={false} /* Disable auto-width */
+            <Box
                 sx={(theme) => ({
                     display: 'flex',
                     flexDirection: 'column',
@@ -91,8 +84,8 @@ export function Login() {
                         <SignInCard />
                     </Box>
                 </Box>
-            </Grid>
-        </Grid>
+            </Box>
+        </Box>
     );
 }
 

@@ -32,7 +32,6 @@ export const COLLECTIONS = {
     MODULES: 'modules',
     LESSONS: 'lessons',
     ENROLLMENTS: 'enrollments',
-    ENROLLMENTS: 'enrollments',
     PROGRESS: 'progress',
 };
 

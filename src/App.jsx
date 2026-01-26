@@ -8,6 +8,7 @@ import { ThemeProvider } from './context/ThemeContext';
 
 // Layout
 import { Layout } from './components/layout';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 
 // Common
 import { ProtectedRoute, GuestRoute, Loading } from './components/common';
@@ -18,6 +19,8 @@ import { Home, Login, Register, Courses, CourseDetail } from './pages/public';
 // Student Pages
 import { Dashboard, Learn } from './pages/student';
 import { Profile } from './pages/dashboard/Profile';
+import { Settings } from './pages/dashboard/Settings';
+import { Analytics } from './pages/dashboard/Analytics';
 
 // Admin Pages
 import { ManageCourses, ManageUsers, CreateCourse, EditCourse } from './pages/admin';
@@ -65,32 +68,20 @@ function App() {
                 }
               />
 
-              {/* Public Routes with Main Layout */}
+              {/* Public Routes with Main Layout (Navbar + Footer) */}
               <Route element={<Layout />}>
-                {/* Public */}
                 <Route path="/" element={<Home />} />
                 <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseDetail />} />
+              </Route>
 
-                {/* Protected - Student+ */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Dashboard Routes with DashboardLayout (Sidebar) */}
+              <Route element={<DashboardLayout />}>
+                {/* Student Dashboard */}
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/profile" element={<Profile />} />
 
-                {/* Protected - Instructor+ */}
+                {/* Instructor+ Routes */}
                 <Route
                   path="/admin/courses"
                   element={
@@ -116,7 +107,7 @@ function App() {
                   }
                 />
 
-                {/* Protected - Admin Only */}
+                {/* Admin Only Routes */}
                 <Route
                   path="/admin/users"
                   element={
@@ -125,9 +116,20 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/admin/analytics"
+                  element={
+                    <ProtectedRoute roles={[ROLES.ADMIN]}>
+                      <Analytics />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Common Authenticated Routes */}
+                <Route path="/settings" element={<Settings />} />
               </Route>
 
-              {/* Learn Page - Full Width (No Footer) */}
+              {/* Learn Page - Full Width (No Sidebar) */}
               <Route
                 path="/learn/:courseId/:lessonId"
                 element={

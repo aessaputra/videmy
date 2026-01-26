@@ -7,5 +7,8 @@ export { ProtectedRoute, GuestRoute } from './ProtectedRoute';
 // Loading component (wrapper around MUI CircularProgress)
 export { Loading } from './Loading';
 
+// Placeholder component
+export { ComingSoon } from './ComingSoon';
+
 // Re-export Motion for convenient animation imports
 export { motion } from 'motion/react';

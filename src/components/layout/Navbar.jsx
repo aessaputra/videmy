@@ -95,11 +95,8 @@ export function Navbar() {
         { to: '/courses', label: 'Courses', icon: PlayCircleIcon },
     ];
 
-    const authNavLinks = [
-        { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon, roles: [ROLES.STUDENT, ROLES.INSTRUCTOR, ROLES.ADMIN] },
-        { to: '/admin/courses', label: 'Manage Courses', icon: AdminIcon, roles: [ROLES.INSTRUCTOR, ROLES.ADMIN] },
-        { to: '/admin/users', label: 'Users', icon: PeopleIcon, roles: [ROLES.ADMIN] },
-    ];
+    // Note: Dashboard is now only in user dropdown menu, not in main nav
+    // This keeps the public navbar clean and focused
 
     // Get user role display name
     const getUserRole = () => {
@@ -263,54 +260,6 @@ export function Navbar() {
                         </ListItem>
                     ))}
                 </List>
-
-                {/* Authenticated Navigation */}
-                {isAuthenticated && (
-                    <List sx={{ px: 1.5 }}>
-                        <Typography
-                            variant="overline"
-                            color="text.secondary"
-                            sx={{ px: 1.5, py: 1, display: 'block', fontSize: '0.65rem', letterSpacing: 1.5 }}
-                        >
-                            Dashboard
-                        </Typography>
-                        {authNavLinks
-                            .filter((link) => hasRole(link.roles))
-                            .map((link) => (
-                                <ListItem key={link.to} disablePadding sx={{ mb: 0.5 }}>
-                                    <ListItemButton
-                                        component={NavLink}
-                                        to={link.to}
-                                        onClick={handleDrawerToggle}
-                                        sx={{
-                                            borderRadius: 2,
-                                            minHeight: 48,
-                                            px: 2,
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                bgcolor: 'action.hover',
-                                                transform: 'translateX(4px)',
-                                            },
-                                            '&.active': {
-                                                bgcolor: 'primary.main',
-                                                color: 'primary.contrastText',
-                                                boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                                                '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-                                            },
-                                        }}
-                                    >
-                                        <ListItemIcon sx={{ minWidth: 44 }}>
-                                            <link.icon />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={link.label}
-                                            primaryTypographyProps={{ fontWeight: 500 }}
-                                        />
-                                    </ListItemButton>
-                                </ListItem>
-                            ))}
-                    </List>
-                )}
 
                 {/* Account Section */}
                 {isAuthenticated && (
@@ -545,37 +494,6 @@ export function Navbar() {
                                     {link.label}
                                 </Button>
                             ))}
-
-                            {isAuthenticated &&
-                                authNavLinks
-                                    .filter((link) => hasRole(link.roles))
-                                    .map((link) => (
-                                        <Button
-                                            key={link.to}
-                                            component={NavLink}
-                                            to={link.to}
-                                            color="inherit"
-                                            sx={{
-                                                color: 'text.secondary',
-                                                px: 2,
-                                                py: 1,
-                                                borderRadius: 2,
-                                                fontWeight: 500,
-                                                transition: 'all 0.2s ease',
-                                                '&:hover': {
-                                                    bgcolor: 'action.hover',
-                                                    color: 'text.primary',
-                                                },
-                                                '&.active': {
-                                                    color: 'primary.main',
-                                                    fontWeight: 600,
-                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                },
-                                            }}
-                                        >
-                                            {link.label}
-                                        </Button>
-                                    ))}
                         </Box>
 
                         {/* Actions */}

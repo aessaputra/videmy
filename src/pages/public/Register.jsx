@@ -11,7 +11,6 @@ import {
     InputAdornment,
     IconButton,
     MenuItem,
-    Grid,
     CssBaseline,
 } from '@mui/material';
 import {
@@ -102,14 +101,11 @@ export function Register() {
     };
 
     return (
-        <Grid container component="main" sx={{ height: '100vh', overflow: 'hidden' }}>
+        <Box component="main" sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <CssBaseline enableColorScheme />
 
             {/* Left Side - Image/Content (30%) */}
-            <Grid
-                item
-                xs={false}
-                md={false} /* Disable auto-width */
+            <Box
                 sx={{
                     display: { xs: 'none', md: 'block' },
                     width: { md: '30%' },
@@ -119,13 +115,10 @@ export function Register() {
                 }}
             >
                 <Content />
-            </Grid>
+            </Box>
 
             {/* Right Side - Register Form (70%) */}
-            <Grid
-                item
-                xs={12}
-                md={false}
+            <Box
                 sx={(theme) => ({
                     display: 'flex',
                     flexDirection: 'column',
@@ -346,8 +339,8 @@ export function Register() {
                         </Box>
                     </Box>
                 </Box>
-            </Grid>
-        </Grid>
+            </Box>
+        </Box>
     );
 }
 
