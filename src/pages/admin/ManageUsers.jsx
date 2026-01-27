@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'sonner';
 import { ROLES, useAuth } from '../../context/AuthContext';
-import { databases, DATABASE_ID, COLLECTIONS, Query, getUserAvatar } from '../../lib/appwrite';
+import { databases, functions, DATABASE_ID, COLLECTIONS, Query, getUserAvatar } from '../../lib/appwrite';
 
 /**
  * Manage Users Page (Admin Only)
@@ -109,26 +109,38 @@ export function ManageUsers() {
         }
     };
 
-    const handleToggleStatus = async (docId, currentStatus) => {
-        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const handleToggleStatus = async (user) => {
+        const newStatus = user.status === 'active' ? 'inactive' : 'active';
         try {
-            await databases.updateDocument(
-                DATABASE_ID,
-                COLLECTIONS.USERS,
-                docId,
-                { status: newStatus }
+            // 1. Call Secure Function to Block/Unblock Auth Account
+            const execution = await functions.createExecution(
+                import.meta.env.VITE_APPWRITE_FUNCTION_USER_MANAGEMENT_ID,
+                JSON.stringify({
+                    action: 'toggle_status',
+                    userId: user.userId, // Auth ID
+                    documentId: user.id, // Document ID (for DB update)
+                    status: newStatus
+                })
             );
+
+            const result = JSON.parse(execution.responseBody);
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to update auth status');
+            }
+
+            // 2. Database Record (Visual Status) is now handled by the Function
+            // We just need to update UI optimistically
 
             // Optimistic Update
             setUsers(users.map(u =>
-                u.id === docId ? { ...u, status: newStatus } : u
+                u.id === user.id ? { ...u, status: newStatus } : u
             ));
 
             const action = newStatus === 'active' ? 'activated' : 'deactivated';
-            toast.success(`User ${action}`);
+            toast.success(`User ${action} successfully`);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to update status');
+            toast.error('Failed to update status: ' + error.message);
         }
     };
 
@@ -243,7 +255,7 @@ export function ManageUsers() {
                                         </TableCell>
                                         <TableCell align="right">
                                             <IconButton
-                                                onClick={() => handleToggleStatus(user.id, user.status)}
+                                                onClick={() => handleToggleStatus(user)}
                                                 title={user.status === 'active' ? 'Deactivate' : 'Activate'}
                                                 size="small"
                                                 color={user.status === 'active' ? 'error' : 'success'}

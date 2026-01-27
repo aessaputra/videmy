@@ -92,8 +92,16 @@ export function AuthProvider({ children }) {
                 profileId: userProfile?.$id,
                 avatar: getUserAvatar(userProfile || userData)
             });
+
+            // Security Check: If user is banned/inactive in DB, force logout
+            if (userProfile?.status === 'inactive') {
+                await account.deleteSession('current');
+                setUser(null);
+                throw new Error('Account is suspended');
+            }
         } catch (error) {
-            // User not logged in
+            // User not logged in or Suspended
+            console.warn('Auth Init Error:', error.message);
             setUser(null);
         } finally {
             setLoading(false);

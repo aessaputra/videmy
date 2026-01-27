@@ -18,6 +18,23 @@
             "events": [],
             "schedule": "",
             "timeout": 15
+        },
+        {
+            "$id": "6978beb0001820d28ca3",
+            "name": "User Management",
+            "runtime": "node-18.0",
+            "path": "functions/user-management",
+            "entrypoint": "src/main.js",
+            "ignore": [
+                "node_modules",
+                ".env"
+            ],
+            "execute": [
+                "users"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15
         }
     ]
 }

@@ -12,10 +12,10 @@ export default async ({ req, res, log, error }) => {
     // 1. Initialize Clients
     const client = new Client()
         .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
-        .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID)
+        .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
         .setKey(process.env.APPWRITE_API_KEY);
 
-    log(`Init: Project=${process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID}, Endpoint=${process.env.APPWRITE_ENDPOINT}`);
+    log(`Init: Project=${process.env.APPWRITE_FUNCTION_PROJECT_ID}, Endpoint=${process.env.APPWRITE_ENDPOINT}`);
 
     const databases = new Databases(client);
     const users = new Users(client);
@@ -84,7 +84,11 @@ async function handleCheckout({ req, res, log, error, stripe, databases, users }
 
     // 2. Fetch Course Details (Source of Truth)
     const DATABASE_ID = process.env.DATABASE_ID;
-    const COURSES_COLLECTION_ID = process.env.COURSES_COLLECTION_ID || 'courses';
+    const COURSES_COLLECTION_ID = process.env.COURSES_COLLECTION_ID;
+
+    if (!DATABASE_ID || !COURSES_COLLECTION_ID) {
+        throw new Error('Database or Collection ID configuration missing');
+    }
 
     let course;
     try {
@@ -227,7 +231,11 @@ async function handleWebhook({ req, res, log, error, stripe, databases }) {
  */
 async function enrollUser({ databases, userId, courseId, log, error }) {
     const DATABASE_ID = process.env.DATABASE_ID;
-    const ENROLLMENTS_COLLECTION_ID = process.env.ENROLLMENTS_COLLECTION_ID || 'enrollments';
+    const ENROLLMENTS_COLLECTION_ID = process.env.ENROLLMENTS_COLLECTION_ID;
+
+    if (!ENROLLMENTS_COLLECTION_ID) {
+        throw new Error('Enrollments Collection ID configuration missing');
+    }
 
     log(`Enrolling User ${userId} for Course ${courseId}`);
 
