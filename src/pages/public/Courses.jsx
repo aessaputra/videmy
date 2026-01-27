@@ -39,6 +39,7 @@ export function Courses() {
                     DATABASE_ID,
                     COLLECTIONS.COURSES,
                     [
+                        Query.equal('isPublished', true),
                         Query.orderDesc('$createdAt'),
                     ]
                 );

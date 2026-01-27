@@ -107,82 +107,103 @@ export function ThumbnailUploader({ initialValue, onChange, user }) {
     };
 
     return (
-        <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
-                <Tabs value={tab} onChange={handleTabChange} aria-label="thumbnail source tabs">
-                    <Tab icon={<UploadIcon fontSize="small" />} iconPosition="start" label="Upload Image" />
-                    <Tab icon={<YouTubeIcon fontSize="small" />} iconPosition="start" label="From YouTube" />
+        <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Tabs
+                    value={tab}
+                    onChange={handleTabChange}
+                    aria-label="thumbnail source tabs"
+                    variant="fullWidth"
+                    sx={{ minHeight: 48 }}
+                >
+                    <Tab icon={<UploadIcon fontSize="small" />} iconPosition="start" label="Upload" sx={{ minHeight: 48 }} />
+                    <Tab icon={<YouTubeIcon fontSize="small" />} iconPosition="start" label="YouTube" sx={{ minHeight: 48 }} />
                 </Tabs>
             </Box>
 
             <Box sx={{ p: 3 }}>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
+                <Stack spacing={3}>
+                    {/* Preview Section - Always on top or integrated */}
+                    <Box>
+                        <Typography variant="subtitle2" gutterBottom>Preview</Typography>
+                        <Card
+                            variant="outlined"
+                            sx={{
+                                bgcolor: 'action.hover',
+                                aspectRatio: '16/9',
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            {preview ? (
+                                <CardMedia
+                                    component="img"
+                                    image={preview}
+                                    alt="Thumbnail Preview"
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0
+                                    }}
+                                />
+                            ) : (
+                                <Box sx={{ textAlign: 'center', color: 'text.secondary', p: 2 }}>
+                                    <ImageIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+                                    <Typography variant="caption" display="block">
+                                        No Thumbnail
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Card>
+                    </Box>
 
-                    {/* Controls */}
-                    <Box sx={{ flex: 1, width: '100%' }}>
+                    {/* Controls Section */}
+                    <Box>
                         {tab === 0 ? (
                             <Stack spacing={2}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Upload a custom cover image (JPG, PNG, WebP). Max 5MB.
-                                </Typography>
                                 <Button
                                     variant="outlined"
                                     component="label"
                                     startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
                                     disabled={uploading}
                                     fullWidth
-                                    sx={{ height: 56, borderStyle: 'dashed' }}
+                                    sx={{ height: 50, borderStyle: 'dashed' }}
                                 >
-                                    {uploading ? 'Uploading...' : 'Choose File'}
+                                    {uploading ? 'Uploading...' : 'Click to Upload Image'}
                                     <input
                                         type="file"
                                         hidden
-                                        accept="image/*"
+                                        accept="image/jpeg,image/png,image/webp"
                                         onChange={handleFileUpload}
                                     />
                                 </Button>
+                                <Typography variant="caption" color="text.secondary" align="center" display="block">
+                                    Supported: JPG, PNG, WebP (Max 5MB)
+                                </Typography>
                             </Stack>
                         ) : (
                             <Stack spacing={2}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Paste a YouTube video URL to automatically use its thumbnail.
-                                </Typography>
                                 <TextField
                                     label="YouTube Video URL"
                                     placeholder="https://youtube.com/watch?v=..."
                                     value={youtubeUrl}
                                     onChange={handleYoutubeChange}
                                     fullWidth
+                                    size="small"
+                                    helperText="Paste URL to auto-fetch thumbnail"
                                 />
                             </Stack>
                         )}
                     </Box>
-
-                    {/* Preview */}
-                    <Box sx={{ width: { xs: '100%', md: 320 }, flexShrink: 0 }}>
-                        <Typography variant="overline" display="block" gutterBottom>
-                            Preview
-                        </Typography>
-                        <Card sx={{ bgcolor: 'action.hover', height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {preview ? (
-                                <CardMedia
-                                    component="img"
-                                    image={preview}
-                                    alt="Thumbnail Preview"
-                                    sx={{ height: '100%', objectFit: 'cover' }}
-                                />
-                            ) : (
-                                <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
-                                    <ImageIcon sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} />
-                                    <Typography variant="caption" display="block">
-                                        No Image Selected
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Card>
-                    </Box>
                 </Stack>
             </Box>
-        </Box>
+        </Card>
     );
 }

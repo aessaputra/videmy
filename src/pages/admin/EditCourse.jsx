@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
     Box,
     Container,
@@ -12,7 +12,6 @@ import {
     FormControlLabel,
     Switch,
     CircularProgress,
-    Divider,
     Accordion,
     AccordionSummary,
     AccordionDetails,
@@ -25,6 +24,17 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    Breadcrumbs,
+    Link,
+    Grid,
+    Card,
+    CardContent,
+    InputAdornment,
+    Divider,
+    Chip,
+    Tabs,
+    Tab,
+    Alert
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -32,28 +42,56 @@ import {
     Add as AddIcon,
     Delete as DeleteIcon,
     PlayArrow as LessonIcon,
+    NavigateNext as NavigateNextIcon,
+    ArrowBack as ArrowBackIcon,
+    Edit as EditIcon,
+    ViewList as ViewListIcon,
+    Settings as SettingsIcon,
+    Info as InfoIcon,
+    DragIndicator as DragIcon
 } from '@mui/icons-material';
 import { toast } from 'sonner';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
 
+// Zod validation schema (English)
+const courseSchema = z.object({
+    title: z.string().min(3, 'Title must be at least 3 characters'),
+    description: z.string().min(10, 'Description must be at least 10 characters'),
+    category: z.string().min(1, 'Category is required'),
+    price: z.coerce.number().min(0, 'Price cannot be negative'),
+    isPublished: z.boolean(),
+    thumbnail: z.string().optional(),
+});
+
+const categories = [
+    'Web Development',
+    'Mobile Development',
+    'Data Science',
+    'Design',
+    'Business',
+    'Marketing'
+];
+
 // Helper: Convert "MM:SS" or "MM" or "123" to seconds (integer)
 const parseDuration = (input) => {
     if (!input) return 0;
-    // If it's already a number or numeric string
     if (!isNaN(input)) return parseInt(input, 10);
-
-    // Split by colon
     const parts = input.toString().split(':').map(p => parseInt(p, 10));
-    if (parts.length === 2) {
-        // MM:SS
-        return (parts[0] * 60) + parts[1];
-    } else if (parts.length === 3) {
-        // HH:MM:SS
-        return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-    }
-    return 0; // Fallback
+    if (parts.length === 2) return (parts[0] * 60) + parts[1];
+    if (parts.length === 3) return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+    return 0;
+};
+
+// Helper: Format seconds to MM:SS
+const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
 export function EditCourse() {
@@ -65,22 +103,36 @@ export function EditCourse() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // Data States
-    const [modules, setModules] = useState([]);
-    const [lessons, setLessons] = useState([]); // Flat list of all lessons
+    // UI State
+    const [activeTab, setActiveTab] = useState(0);
 
-    // Form State
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        category: '',
-        price: 0,
-        isPublished: false,
-        thumbnail: '',
-        instructorId: '',
+    // Data States (for modules & lessons)
+    const [modules, setModules] = useState([]);
+    const [lessons, setLessons] = useState([]);
+    const [instructorId, setInstructorId] = useState('');
+
+    // React Hook Form setup
+    const {
+        control,
+        handleSubmit,
+        reset,
+        watch,
+        setValue,
+        formState: { errors }
+    } = useForm({
+        resolver: zodResolver(courseSchema),
+        defaultValues: {
+            title: '',
+            description: '',
+            category: 'Web Development',
+            price: 0,
+            isPublished: false,
+            thumbnail: '',
+        }
     });
 
-    const categories = ['Web Development', 'Mobile Development', 'Data Science', 'Design', 'Business', 'Marketing'];
+    const priceValue = watch('price');
+    const isPublished = watch('isPublished');
 
     // Dialog States
     const [moduleDialog, setModuleDialog] = useState(false);
@@ -88,9 +140,124 @@ export function EditCourse() {
     const [newModuleTitle, setNewModuleTitle] = useState('');
     const [newLessonData, setNewLessonData] = useState({ title: '', youtubeUrl: '', duration: '', moduleId: '' });
 
-    // ...
+    // Fetch course data and populate form
+    useEffect(() => {
+        const fetchCourseData = async () => {
+            try {
+                const courseDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, id);
 
-    // --- Handlers: Lessons ---
+                if (courseDoc.instructorId !== user?.$id) {
+                    toast.error('Unauthorized access');
+                    navigate('/admin/courses');
+                    return;
+                }
+
+                setInstructorId(courseDoc.instructorId);
+
+                // Reset form with fetched data
+                reset({
+                    title: courseDoc.title,
+                    description: courseDoc.description,
+                    category: courseDoc.category,
+                    price: courseDoc.price,
+                    isPublished: courseDoc.isPublished,
+                    thumbnail: courseDoc.thumbnail || '',
+                });
+
+                // Fetch Modules
+                const modulesRes = await databases.listDocuments(
+                    DATABASE_ID,
+                    COLLECTIONS.MODULES,
+                    [Query.equal('courseId', id), Query.orderAsc('order')]
+                );
+                setModules(modulesRes.documents);
+
+                // Fetch Lessons
+                if (modulesRes.documents.length > 0) {
+                    const moduleIds = modulesRes.documents.map(m => m.$id);
+                    const lessonsRes = await databases.listDocuments(
+                        DATABASE_ID,
+                        COLLECTIONS.LESSONS,
+                        [Query.equal('moduleId', moduleIds), Query.limit(100)]
+                    );
+                    setLessons(lessonsRes.documents);
+                }
+            } catch (error) {
+                console.error('Data load failed:', error);
+                toast.error('Failed to load course data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user && id) fetchCourseData();
+    }, [id, user, navigate, reset]);
+
+    // Sync lesson count on load
+    useEffect(() => {
+        if (!loading && lessons.length > 0 && lessons.length < 100) {
+            const syncCount = async () => {
+                try {
+                    await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, { lessonsCount: lessons.length });
+                } catch { /* ignore */ }
+            };
+            syncCount();
+        }
+    }, [loading, id, lessons.length]);
+
+    // Save Course Details
+    const onSubmit = async (data) => {
+        setSaving(true);
+        try {
+            await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, {
+                title: data.title,
+                description: data.description,
+                category: data.category,
+                price: data.price,
+                isPublished: data.isPublished,
+                thumbnail: data.thumbnail,
+            });
+            toast.success('Course details updated');
+        } catch (error) {
+            toast.error('Failed to save course');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Module Handlers
+    const handleAddModule = async () => {
+        if (!newModuleTitle.trim()) return;
+        try {
+            const res = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.MODULES,
+                ID.unique(),
+                { title: newModuleTitle, courseId: id, order: modules.length },
+                [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
+            );
+            setModules([...modules, res]);
+            setModuleDialog(false);
+            setNewModuleTitle('');
+            toast.success('Module added');
+        } catch {
+            toast.error('Failed to add module');
+        }
+    };
+
+    const handleDeleteModule = async (moduleId) => {
+        if (!window.confirm('Delete this module? All lessons within it will be removed from view.')) return;
+        try {
+            await databases.deleteDocument(DATABASE_ID, COLLECTIONS.MODULES, moduleId);
+            setModules(modules.filter(m => m.$id !== moduleId));
+            setLessons(lessons.filter(l => l.moduleId !== moduleId));
+            toast.success('Module deleted');
+        } catch {
+            toast.error('Failed to delete module');
+        }
+    };
+
+    // Lesson Handlers
     const openAddLesson = (moduleId) => {
         setNewLessonData({ title: '', youtubeUrl: '', duration: '', moduleId });
         setLessonDialog(true);
@@ -105,360 +272,378 @@ export function EditCourse() {
                 ID.unique(),
                 {
                     title: newLessonData.title,
-                    youtubeUrl: newLessonData.youtubeUrl, // Schema expects youtubeUrl
+                    youtubeUrl: newLessonData.youtubeUrl,
                     duration: parseDuration(newLessonData.duration),
                     moduleId: newLessonData.moduleId,
                     order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length,
-                    content: '', // Default content
-                    isFree: false // Default locked
+                    content: '',
+                    isFree: false
                 },
-                [
-                    Permission.read(Role.any()),
-                    Permission.update(Role.user(user.$id)),
-                    Permission.delete(Role.user(user.$id))
-                ]
+                [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
             );
-            setLessons(prev => [...prev, res]); // Functional update for safety
+            setLessons(prev => [...prev, res]);
             setLessonDialog(false);
-
-            // Update Course Lesson Count
-            // We use lessons.length + 1 because 'lessons' in this scope is the OLD state
-            const newCount = lessons.length + 1;
-            console.log(`[AddLesson] Updating count to: ${newCount}`);
-
-            await databases.updateDocument(
-                DATABASE_ID,
-                COLLECTIONS.COURSES,
-                id,
-                { lessonsCount: newCount }
-            );
-
+            await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, { lessonsCount: lessons.length + 1 });
             toast.success('Lesson added');
-        } catch (error) {
-            console.error('[AddLesson] Error:', error);
+        } catch {
             toast.error('Failed to add lesson');
         }
     };
 
-    // ...
-
-
-    useEffect(() => {
-        const fetchCourseData = async () => {
-            try {
-                // 1. Fetch Course
-                const courseDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, id);
-
-                if (courseDoc.instructorId !== user?.$id) {
-                    toast.error('Unauthorized');
-                    navigate('/admin/courses');
-                    return;
-                }
-
-                setFormData({
-                    title: courseDoc.title,
-                    description: courseDoc.description,
-                    category: courseDoc.category,
-                    price: courseDoc.price,
-                    isPublished: courseDoc.isPublished,
-                    thumbnail: courseDoc.thumbnail || '',
-                    instructorId: courseDoc.instructorId
-                });
-
-                // 2. Fetch Modules
-                const modulesRes = await databases.listDocuments(
-                    DATABASE_ID,
-                    COLLECTIONS.MODULES,
-                    [Query.equal('courseId', id), Query.orderAsc('order')]
-                );
-                setModules(modulesRes.documents);
-
-                // 3. Fetch Lessons (if modules exist)
-                if (modulesRes.documents.length > 0) {
-                    const moduleIds = modulesRes.documents.map(m => m.$id);
-                    const lessonsRes = await databases.listDocuments(
-                        DATABASE_ID,
-                        COLLECTIONS.LESSONS,
-                        [Query.equal('moduleId', moduleIds), Query.limit(100)]
-                    );
-                    setLessons(lessonsRes.documents);
-                }
-
-            } catch (error) {
-                console.error('Data load failed:', error);
-                toast.error('Failed to load course data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (user && id) fetchCourseData();
-    }, [id, user, navigate]);
-
-    // Self-Healing Effect: Sync Lesson Count if mismatched
-    useEffect(() => {
-        if (!loading && lessons.length > 0) {
-            // We need to check against the Initial loaded count, but that might be stale.
-            // Simplified check: If we have lessons loaded, trigger a check against DB or just blind update?
-            // Safer: Just update the count if we are sure we have ALL lessons.
-            // Since we fetched ALL lessons (limit 100 in previous step), we can verify.
-
-            // To be safe, we only do this if we are confident we have the full list.
-            // The limit was 100. If we have 100 lessons, we might be missing some, so don't auto-update.
-            if (lessons.length < 100) {
-                // We can't easily read the "old" count from state without causing loops or complex refs.
-                // Instead, we just ensure the DB is efficient by only updating if reasonable.
-                // Actually, a better place is inside the fetch finally block or a specific sync function.
-                // Let's rely on the user actions (Add/Delete) which are already consistent.
-                // BUT, to fix existing bad data:
-
-                const syncCount = async () => {
-                    try {
-                        // We don't have the 'original' doc count readily available in this scope easily 
-                        // unless we store it. Let's assume if we are editing, we want truth.
-                        await databases.updateDocument(
-                            DATABASE_ID,
-                            COLLECTIONS.COURSES,
-                            id,
-                            { lessonsCount: lessons.length }
-                        );
-                    } catch (e) {
-                        // ignore
-                    }
-                };
-                syncCount();
-            }
-        }
-    }, [loading, id]); // Only run once on load completion
-
-    // --- Handlers: Course ---
-    const handleCourseChange = (e) => {
-        const { name, value, checked, type } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
-
-    const handleSaveCourse = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        try {
-            await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, {
-                title: formData.title,
-                description: formData.description,
-                category: formData.category,
-                price: parseFloat(formData.price) || 0,
-                isPublished: formData.isPublished,
-                thumbnail: formData.thumbnail,
-            });
-            toast.success('Course details saved');
-        } catch (error) {
-            toast.error('Failed to save course');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // --- Handlers: Modules ---
-    const handleAddModule = async () => {
-        if (!newModuleTitle.trim()) return;
-        try {
-            const newOrder = modules.length;
-            const res = await databases.createDocument(
-                DATABASE_ID,
-                COLLECTIONS.MODULES,
-                ID.unique(),
-                {
-                    title: newModuleTitle,
-                    courseId: id,
-                    order: newOrder
-                },
-                [
-                    Permission.read(Role.any()),
-                    Permission.update(Role.user(user.$id)),
-                    Permission.delete(Role.user(user.$id))
-                ]
-            );
-            setModules([...modules, res]);
-            setModuleDialog(false);
-            setNewModuleTitle('');
-            toast.success('Module added');
-        } catch (error) {
-            toast.error('Failed to add module');
-        }
-    };
-
-    const handleDeleteModule = async (moduleId) => {
-        if (!window.confirm('Delete module?')) return;
-        try {
-            await databases.deleteDocument(DATABASE_ID, COLLECTIONS.MODULES, moduleId);
-            setModules(modules.filter(m => m.$id !== moduleId));
-            // Cleanup lessons in local state
-            setLessons(lessons.filter(l => l.moduleId !== moduleId));
-            toast.success('Module deleted');
-        } catch (error) {
-            toast.error('Failed to delete module');
-        }
-    };
-
-
-
     const handleDeleteLesson = async (lessonId) => {
-        if (!window.confirm('Delete lesson?')) return;
+        if (!window.confirm('Delete this lesson?')) return;
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.LESSONS, lessonId);
             setLessons(lessons.filter(l => l.$id !== lessonId));
-
-            // Update Course Lesson Count
-            await databases.updateDocument(
-                DATABASE_ID,
-                COLLECTIONS.COURSES,
-                id,
-                { lessonsCount: Math.max(0, lessons.length - 1) }
-            );
-
+            await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, { lessonsCount: Math.max(0, lessons.length - 1) });
             toast.success('Lesson deleted');
-        } catch (error) {
+        } catch {
             toast.error('Failed to delete lesson');
         }
     };
 
-    if (loading) return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+    const handleDeleteCourse = async () => {
+        if (!confirm('Are you definitely sure? This action is irreversible.')) return;
+        try {
+            await databases.deleteDocument(DATABASE_ID, COLLECTIONS.COURSES, id);
+            toast.success('Course deleted');
+            navigate('/admin/courses');
+        } catch (e) {
+            toast.error('Failed to delete course');
+        }
+    };
+
+    if (loading) return <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', minHeight: '80vh', alignItems: 'center' }}><CircularProgress /></Box>;
 
     return (
-        <Box sx={{ py: 4 }}>
-            <Container maxWidth="md">
-                <Typography variant="h4" fontWeight={700} gutterBottom>Edit Course</Typography>
+        <Box sx={{ py: 4, bgcolor: 'background.default', minHeight: '100vh' }}>
+            <Container maxWidth="lg">
+                <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
+                    <Link component={RouterLink} to="/dashboard" color="inherit" underline="hover">Dashboard</Link>
+                    <Link component={RouterLink} to="/admin/courses" color="inherit" underline="hover">Courses</Link>
+                    <Typography color="text.primary">Edit Course</Typography>
+                </Breadcrumbs>
 
-                <Paper component="form" onSubmit={handleSaveCourse} sx={{ p: 4, mb: 4 }}>
-                    <Stack spacing={3}>
-                        <TextField label="Title" name="title" value={formData.title} onChange={handleCourseChange} required fullWidth />
-                        <TextField label="Description" name="description" value={formData.description} onChange={handleCourseChange} required multiline rows={3} fullWidth />
-
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                            <TextField select label="Category" name="category" value={formData.category} onChange={handleCourseChange} required fullWidth>
-                                {categories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                            </TextField>
-
-                            <TextField
-                                select
-                                label="Course Type"
-                                value={formData.price > 0 ? 'paid' : 'free'}
-                                onChange={(e) => {
-                                    const isPaid = e.target.value === 'paid';
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        price: isPaid ? (prev.price || 50000) : 0
-                                    }));
-                                }}
-                                fullWidth
-                            >
-                                <MenuItem value="free">Free</MenuItem>
-                                <MenuItem value="paid">Paid</MenuItem>
-                            </TextField>
-
-                            {formData.price > 0 && (
-                                <TextField
-                                    label="Price (IDR)"
-                                    name="price"
-                                    type="number"
-                                    value={formData.price}
-                                    onChange={handleCourseChange}
-                                    fullWidth
-                                    InputProps={{ inputProps: { min: 10000 } }}
-                                    helperText="Minimum Rp 10.000"
-                                />
-                            )}
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                    <Box>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                            <Typography variant="h4" fontWeight={700}>Editor</Typography>
+                            <Chip label={isPublished ? "Published" : "Draft"} color={isPublished ? "success" : "default"} size="small" />
                         </Stack>
-
-                        <ThumbnailUploader
-                            initialValue={formData.thumbnail}
-                            onChange={(url) => setFormData(prev => ({ ...prev, thumbnail: url }))}
-                            user={user}
-                        />
-
-                        <FormControlLabel control={<Switch checked={formData.isPublished} onChange={handleCourseChange} name="isPublished" color="success" />} label="Published" />
-
-                        <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={saving} size="large">
-                            {saving ? 'Saving...' : 'Save Details'}
-                        </Button>
-                    </Stack>
-                </Paper>
-
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    <Typography variant="h5" fontWeight={600}>Curriculum</Typography>
-                    <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setModuleDialog(true)}>Add Module</Button>
+                    </Box>
+                    <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/courses')}>
+                        All Courses
+                    </Button>
                 </Stack>
 
-                <Box sx={{ mb: 8 }}>
-                    {modules.length === 0 ? (
-                        <Paper sx={{ p: 4, textAlign: 'center' }}><Typography color="text.secondary">No modules. Add one to start.</Typography></Paper>
-                    ) : (
-                        modules.map(module => (
-                            <Accordion key={module.$id}>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                    <Typography fontWeight={600}>{module.title}</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <List>
-                                        {lessons.filter(l => l.moduleId === module.$id).map(lesson => (
-                                            <ListItem key={lesson.$id}>
-                                                <LessonIcon sx={{ mr: 2, color: 'text.secondary' }} />
-                                                <ListItemText primary={lesson.title} secondary={`Duration: ${lesson.duration}`} />
-                                                <ListItemSecondaryAction>
-                                                    <IconButton edge="end" onClick={() => handleDeleteLesson(lesson.$id)}><DeleteIcon /></IconButton>
-                                                </ListItemSecondaryAction>
-                                            </ListItem>
-                                        ))}
-                                        {lessons.filter(l => l.moduleId === module.$id).length === 0 && (
-                                            <Typography variant="body2" color="text.secondary" sx={{ py: 1, px: 2 }}>No lessons yet.</Typography>
+                {/* TABS HEADER */}
+                <Paper elevation={0} variant="outlined" sx={{ mb: 3 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, v) => setActiveTab(v)}
+                        variant="fullWidth"
+                        indicatorColor="primary"
+                        textColor="primary"
+                    >
+                        <Tab icon={<ViewListIcon />} iconPosition="start" label="Curriculum" />
+                        <Tab icon={<InfoIcon />} iconPosition="start" label="Details" />
+                        <Tab icon={<SettingsIcon />} iconPosition="start" label="Settings" />
+                    </Tabs>
+                </Paper>
+
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    {/* ===== TAB 0: CURRICULUM ===== */}
+                    <Box role="tabpanel" hidden={activeTab !== 0} sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3, px: 1 }}>
+                            <Box>
+                                <Typography variant="h6" fontWeight={600}>Course Structure</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {modules.length} Modules • {lessons.length} Lessons
+                                </Typography>
+                            </Box>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={() => setModuleDialog(true)}
+                                sx={{ borderRadius: 2 }}
+                            >
+                                Add Module
+                            </Button>
+                        </Stack>
+
+                        {modules.length === 0 ? (
+                            <Paper sx={{ p: 8, textAlign: 'center', bgcolor: 'background.paper', borderStyle: 'dashed' }} variant="outlined">
+                                <Typography variant="h6" color="text.secondary" gutterBottom>It's empty here</Typography>
+                                <Typography color="text.secondary" paragraph>Start by adding your first module to organize content.</Typography>
+                                <Button variant="outlined" onClick={() => setModuleDialog(true)} startIcon={<AddIcon />}>Create Module</Button>
+                            </Paper>
+                        ) : (
+                            <Stack spacing={3}>
+                                {modules.map((module, index) => (
+                                    <Card key={module.$id} variant="outlined" sx={{ overflow: 'visible' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'grey.50', borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <DragIcon sx={{ color: 'text.disabled', cursor: 'grab' }} fontSize="small" />
+                                                <Typography fontWeight={600}>Module {index + 1}: {module.title}</Typography>
+                                            </Stack>
+                                            <Box>
+                                                <IconButton size="small" onClick={() => openAddLesson(module.$id)} title="Add Lesson"><AddIcon /></IconButton>
+                                                <IconButton size="small" color="error" onClick={() => handleDeleteModule(module.$id)}><DeleteIcon /></IconButton>
+                                            </Box>
+                                        </Box>
+                                        <Box>
+                                            <List disablePadding>
+                                                {lessons.filter(l => l.moduleId === module.$id).map((lesson, lIdx) => (
+                                                    <ListItem key={lesson.$id} divider sx={{ pl: 4 }}>
+                                                        <LessonIcon sx={{ mr: 2, color: 'primary.main', fontSize: 20 }} />
+                                                        <ListItemText
+                                                            primary={lesson.title}
+                                                            secondary={formatDuration(lesson.duration)}
+                                                            primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+                                                        />
+                                                        <ListItemSecondaryAction>
+                                                            <IconButton edge="end" size="small" color="error" onClick={() => handleDeleteLesson(lesson.$id)}>
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </ListItemSecondaryAction>
+                                                    </ListItem>
+                                                ))}
+                                                {lessons.filter(l => l.moduleId === module.$id).length === 0 && (
+                                                    <Box sx={{ p: 2, pl: 4 }}>
+                                                        <Button
+                                                            size="small"
+                                                            startIcon={<AddIcon />}
+                                                            onClick={() => openAddLesson(module.$id)}
+                                                            sx={{ color: 'text.secondary' }}
+                                                        >
+                                                            Add first lesson
+                                                        </Button>
+                                                    </Box>
+                                                )}
+                                            </List>
+                                        </Box>
+                                    </Card>
+                                ))}
+                            </Stack>
+                        )}
+                    </Box>
+
+                    {/* ===== TAB 1: DETAILS ===== */}
+                    <Box role="tabpanel" hidden={activeTab !== 1} sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
+                        <Card variant="outlined">
+                            <CardContent sx={{ p: 4 }}>
+                                <Stack spacing={3} maxWidth="md">
+                                    <Controller
+                                        name="title"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Course Title"
+                                                required
+                                                fullWidth
+                                                error={!!errors.title}
+                                                helperText={errors.title?.message}
+                                            />
                                         )}
-                                    </List>
-                                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                        <Button size="small" color="error" onClick={() => handleDeleteModule(module.$id)}>Delete Module</Button>
-                                        <Button size="small" startIcon={<AddIcon />} onClick={() => openAddLesson(module.$id)}>Add Lesson</Button>
+                                    />
+                                    <Controller
+                                        name="description"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Description"
+                                                required
+                                                multiline
+                                                rows={6}
+                                                fullWidth
+                                                error={!!errors.description}
+                                                helperText={errors.description?.message}
+                                            />
+                                        )}
+                                    />
+                                    <Grid container spacing={3}>
+                                        <Grid item xs={12} md={6}>
+                                            <Controller
+                                                name="category"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <TextField
+                                                        {...field}
+                                                        select
+                                                        label="Category"
+                                                        required
+                                                        fullWidth
+                                                    >
+                                                        {categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                                                    </TextField>
+                                                )}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                    <Button size="large" variant="contained" type="submit" startIcon={<SaveIcon />} sx={{ alignSelf: 'flex-start', px: 4 }}>
+                                        Save Details
+                                    </Button>
+                                </Stack>
+                            </CardContent>
+                        </Card>
+                    </Box>
+
+                    {/* ===== TAB 2: SETTINGS ===== */}
+                    <Box role="tabpanel" hidden={activeTab !== 2} sx={{ display: activeTab === 2 ? 'block' : 'none' }}>
+                        <Stack spacing={4} maxWidth="md">
+                            <Card variant="outlined">
+                                <CardContent sx={{ p: 3 }}>
+                                    <Typography variant="h6" gutterBottom>Course Configuration</Typography>
+
+                                    {/* Pricing Section */}
+                                    <Box sx={{ mb: 4 }}>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>Pricing</Typography>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="flex-start">
+                                            <TextField
+                                                select
+                                                label="Course Type"
+                                                value={priceValue > 0 ? 'paid' : 'free'}
+                                                onChange={(e) => setValue('price', e.target.value === 'paid' ? 50000 : 0)}
+                                                fullWidth
+                                                sx={{ maxWidth: { sm: 200 } }}
+                                            >
+                                                <MenuItem value="free">Free</MenuItem>
+                                                <MenuItem value="paid">Paid</MenuItem>
+                                            </TextField>
+
+                                            {priceValue > 0 && (
+                                                <Controller
+                                                    name="price"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <TextField
+                                                            {...field}
+                                                            label="Price amount"
+                                                            type="number"
+                                                            InputProps={{ startAdornment: <InputAdornment position="start">Rp</InputAdornment> }}
+                                                            fullWidth
+                                                            sx={{ maxWidth: { sm: 200 } }}
+                                                        />
+                                                    )}
+                                                />
+                                            )}
+                                        </Stack>
                                     </Box>
-                                </AccordionDetails>
-                            </Accordion>
-                        ))
-                    )}
-                </Box>
-            </Container>
 
-            {/* Module Dialog */}
-            <Dialog open={moduleDialog} onClose={() => setModuleDialog(false)}>
-                <DialogTitle>Add Module</DialogTitle>
-                <DialogContent>
-                    <TextField autoFocus margin="dense" label="Module Title" fullWidth value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setModuleDialog(false)}>Cancel</Button>
-                    <Button onClick={handleAddModule} variant="contained">Add</Button>
-                </DialogActions>
-            </Dialog>
+                                    <Divider sx={{ mb: 4 }} />
 
-            {/* Lesson Dialog */}
-            <Dialog open={lessonDialog} onClose={() => setLessonDialog(false)}>
-                <DialogTitle>Add Lesson</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
-                        <TextField label="Lesson Title" fullWidth value={newLessonData.title} onChange={(e) => setNewLessonData({ ...newLessonData, title: e.target.value })} />
+                                    {/* Visibility Section */}
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>Visibility</Typography>
+                                        <Controller
+                                            name="isPublished"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <FormControlLabel
+                                                    control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} color="success" />}
+                                                    label={field.value ? "Published (Visible to students)" : "Draft (Hidden)"}
+                                                    sx={{ mt: 1 }}
+                                                />
+                                            )}
+                                        />
+                                    </Box>
+
+                                    <Box mt={3} display="flex" justifyContent="flex-end">
+                                        <Button variant="contained" onClick={handleSubmit(onSubmit)}>Save Changes</Button>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+
+                            <Card variant="outlined">
+                                <CardContent sx={{ p: 3 }}>
+                                    <Typography variant="h6" gutterBottom>Course Thumbnail</Typography>
+                                    <Box sx={{ width: '100%', maxWidth: 400, mt: 2 }}>
+                                        <Controller
+                                            name="thumbnail"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <ThumbnailUploader
+                                                    initialValue={field.value}
+                                                    onChange={(url) => {
+                                                        field.onChange(url);
+                                                    }}
+                                                    user={user}
+                                                />
+                                            )}
+                                        />
+                                    </Box>
+                                    <Button sx={{ mt: 2 }} variant="contained" size="small" onClick={handleSubmit(onSubmit)}>Save Media</Button>
+                                </CardContent>
+                            </Card>
+
+                            <Card variant="outlined" sx={{ borderColor: 'error.main', bgcolor: 'error.lighter' }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Typography variant="h6" color="error" gutterBottom>Danger Zone</Typography>
+                                    <Typography variant="body2" paragraph>
+                                        Deleting this course will remove all modules and lessons permanently.
+                                        This action cannot be undone.
+                                    </Typography>
+                                    <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleDeleteCourse}>
+                                        Delete Course
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </Stack>
+                    </Box>
+
+                </form>
+
+                {/* Dialogs */}
+                <Dialog open={moduleDialog} onClose={() => setModuleDialog(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle>Add New Module</DialogTitle>
+                    <DialogContent>
                         <TextField
-                            label="YouTube Video URL"
+                            autoFocus
+                            margin="dense"
+                            label="Module Title"
                             fullWidth
-                            value={newLessonData.youtubeUrl}
-                            onChange={(e) => setNewLessonData({ ...newLessonData, youtubeUrl: e.target.value })}
-                            helperText="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                            value={newModuleTitle}
+                            onChange={(e) => setNewModuleTitle(e.target.value)}
                         />
-                        <TextField label="Duration" fullWidth value={newLessonData.duration} onChange={(e) => setNewLessonData({ ...newLessonData, duration: e.target.value })} helperText="e.g. 10:30" />
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setLessonDialog(false)}>Cancel</Button>
-                    <Button onClick={handleAddLesson} variant="contained">Add Lesson</Button>
-                </DialogActions>
-            </Dialog>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setModuleDialog(false)}>Cancel</Button>
+                        <Button onClick={handleAddModule} variant="contained">Add Module</Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog open={lessonDialog} onClose={() => setLessonDialog(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle>Add New Lesson</DialogTitle>
+                    <DialogContent>
+                        <Stack spacing={3} sx={{ mt: 1 }}>
+                            <TextField
+                                label="Lesson Title"
+                                fullWidth
+                                value={newLessonData.title}
+                                onChange={(e) => setNewLessonData({ ...newLessonData, title: e.target.value })}
+                            />
+                            <TextField
+                                label="YouTube Video URL"
+                                fullWidth
+                                value={newLessonData.youtubeUrl}
+                                onChange={(e) => setNewLessonData({ ...newLessonData, youtubeUrl: e.target.value })}
+                            />
+                            <TextField
+                                label="Duration (MM:SS)"
+                                fullWidth
+                                value={newLessonData.duration}
+                                onChange={(e) => setNewLessonData({ ...newLessonData, duration: e.target.value })}
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setLessonDialog(false)}>Cancel</Button>
+                        <Button onClick={handleAddLesson} variant="contained">Add Lesson</Button>
+                    </DialogActions>
+                </Dialog>
+            </Container>
         </Box>
     );
 }
