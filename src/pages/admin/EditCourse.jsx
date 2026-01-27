@@ -54,7 +54,7 @@ import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
 
@@ -96,7 +96,7 @@ const formatDuration = (seconds) => {
 
 export function EditCourse() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, hasRole } = useAuth();
     const navigate = useNavigate();
 
     // Loading States
@@ -146,7 +146,7 @@ export function EditCourse() {
             try {
                 const courseDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.COURSES, id);
 
-                if (courseDoc.instructorId !== user?.$id) {
+                if (courseDoc.instructorId !== user?.$id && !hasRole(ROLES.ADMIN)) {
                     toast.error('Unauthorized access');
                     navigate('/admin/courses');
                     return;
