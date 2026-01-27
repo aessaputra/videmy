@@ -328,7 +328,12 @@ export function EditCourse() {
                     <Box>
                         <Stack direction="row" alignItems="center" spacing={2}>
                             <Typography variant="h4" fontWeight={700}>Editor</Typography>
-                            <Chip label={isPublished ? "Published" : "Draft"} color={isPublished ? "success" : "default"} size="small" />
+                            <Chip
+                                label={isPublished ? "Published" : "Draft"}
+                                color={isPublished ? "success" : "warning"}
+                                variant="outlined"
+                                size="small"
+                            />
                         </Stack>
                     </Box>
                     <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/courses')}>
@@ -381,7 +386,7 @@ export function EditCourse() {
                             <Stack spacing={3}>
                                 {modules.map((module, index) => (
                                     <Card key={module.$id} variant="outlined" sx={{ overflow: 'visible' }}>
-                                        <Box sx={{ p: 2, bgcolor: 'grey.50', borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Stack direction="row" spacing={1} alignItems="center">
                                                 <DragIcon sx={{ color: 'text.disabled', cursor: 'grab' }} fontSize="small" />
                                                 <Typography fontWeight={600}>Module {index + 1}: {module.title}</Typography>

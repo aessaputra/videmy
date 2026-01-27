@@ -58,10 +58,12 @@ export default function CourseStatsDialog({ open, onClose, course }) {
     const [loading, setLoading] = useState(true);
     const [students, setStudents] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [instructorName, setInstructorName] = useState(course?.instructorName || 'Unknown');
 
     useEffect(() => {
         if (open && course) {
-            setTab(0); // Reset to first tab
+            setTab(0);
+            setInstructorName(course.instructorName || course.instructorId); // Default to existing prop
             fetchCourseDetails();
         }
     }, [open, course]);
@@ -69,6 +71,22 @@ export default function CourseStatsDialog({ open, onClose, course }) {
     const fetchCourseDetails = async () => {
         setLoading(true);
         try {
+            // 0. Fetch Instructor Name (if it looks like an ID or just to be sure)
+            if (course.instructorId) {
+                try {
+                    const instructorRes = await databases.listDocuments(
+                        DATABASE_ID,
+                        COLLECTIONS.USERS,
+                        [Query.equal('userId', course.instructorId)]
+                    );
+                    if (instructorRes.documents.length > 0) {
+                        setInstructorName(instructorRes.documents[0].name);
+                    }
+                } catch (e) {
+                    console.error('Error fetching instructor:', e);
+                }
+            }
+
             // 1. Fetch Enrollments for this course
             const enrollmentsRes = await databases.listDocuments(
                 DATABASE_ID,
@@ -223,8 +241,8 @@ export default function CourseStatsDialog({ open, onClose, course }) {
                                 <Typography variant="body2" color="text.secondary">Total Lessons</Typography>
                             </Paper>
                             <Paper variant="outlined" sx={{ p: 2, flex: 1, textAlign: 'center' }}>
-                                <Typography variant="h4" color="success.main" fontWeight={700}>
-                                    {course.isPublished ? 'Live' : 'Draft'}
+                                <Typography variant="h4" color={course.isPublished ? 'success.main' : 'warning.main'} fontWeight={700}>
+                                    {course.isPublished ? 'Published' : 'Draft'}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">Status</Typography>
                             </Paper>
@@ -236,7 +254,7 @@ export default function CourseStatsDialog({ open, onClose, course }) {
                                 <Stack spacing={1}>
                                     <Stack direction="row" justifyContent="space-between">
                                         <Typography variant="body2" color="text.secondary">Instructor:</Typography>
-                                        <Typography variant="body2" fontWeight={500}>{course.instructorName}</Typography>
+                                        <Typography variant="body2" fontWeight={500}>{instructorName}</Typography>
                                     </Stack>
                                     <Divider />
                                     <Stack direction="row" justifyContent="space-between">

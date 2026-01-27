@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Box,
+    Avatar,
     Container,
     Typography,
     Button,
@@ -28,7 +29,11 @@ import {
     Search as SearchIcon,
     People as PeopleIcon,
     Launch as LaunchIcon,
+    School as SchoolIcon,
+    Image as ImageIcon,
+    MoreHoriz as MoreHorizIcon,
 } from '@mui/icons-material';
+import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
@@ -52,6 +57,10 @@ export function ManageCourses() {
     const [statsOpen, setStatsOpen] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
 
+    // Menu State
+    const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
+    const [actionMenuCourse, setActionMenuCourse] = useState(null);
+
     useEffect(() => {
         if (user && hasRole(ROLES.INSTRUCTOR)) {
             fetchCourses();
@@ -73,6 +82,25 @@ export function ManageCourses() {
                 queries
             );
 
+            // Fetch Instructor details (names)
+            const instructorIds = [...new Set(response.documents.map(d => d.instructorId).filter(Boolean))];
+            let instructorMap = {};
+
+            if (instructorIds.length > 0) {
+                try {
+                    const usersRes = await databases.listDocuments(
+                        DATABASE_ID,
+                        COLLECTIONS.USERS,
+                        [Query.equal('userId', instructorIds)]
+                    );
+                    usersRes.documents.forEach(u => {
+                        instructorMap[u.userId] = u.name;
+                    });
+                } catch (e) {
+                    console.error("Failed to fetch instructors", e);
+                }
+            }
+
             // Map Appwrite documents to local state format
             const mappedCourses = response.documents.map(doc => ({
                 id: doc.$id,
@@ -82,10 +110,11 @@ export function ManageCourses() {
                 studentsCount: doc.studentsCount || 0, // Use cached count
                 isPublished: doc.isPublished || false,
                 instructorId: doc.instructorId,
-                instructorName: doc.instructorName || doc.instructorId,
+                instructorName: instructorMap[doc.instructorId] || doc.instructorName || doc.instructorId,
+                thumbnail: doc.thumbnail, // Add thumbnail mapping
             }));
 
-            // Use mapped courses directly without secondary heavy fetching
+            // Use mapped courses directly
             setCourses(mappedCourses);
 
         } catch (error) {
@@ -135,7 +164,35 @@ export function ManageCourses() {
         }
     };
 
+    const handleActionMenuOpen = (event, course) => {
+        event.stopPropagation();
+        setActionMenuAnchor(event.currentTarget);
+        setActionMenuCourse(course);
+    };
 
+    const handleActionMenuClose = () => {
+        setActionMenuAnchor(null);
+        setActionMenuCourse(null);
+    };
+
+    const handleMenuAction = (action) => {
+        if (!actionMenuCourse) return;
+
+        const course = actionMenuCourse;
+        handleActionMenuClose();
+
+        switch (action) {
+            case 'edit':
+                // Handled via Link in MenuItem usually, but we can standard nav here if needed
+                break;
+            case 'toggle-publish':
+                handleTogglePublish(course.id, course.isPublished);
+                break;
+            case 'delete':
+                handleDelete(course.id);
+                break;
+        }
+    };
 
     const filteredCourses = courses.filter(course =>
         course.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -191,97 +248,83 @@ export function ManageCourses() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell><strong>Course</strong></TableCell>
-                                {hasRole(ROLES.ADMIN) && <TableCell><strong>Instructor</strong></TableCell>}
-                                <TableCell><strong>Category</strong></TableCell>
-                                <TableCell align="center"><strong>Lessons</strong></TableCell>
-                                <TableCell align="center"><strong>Students</strong></TableCell>
-                                <TableCell align="center"><strong>Status</strong></TableCell>
-                                <TableCell align="right"><strong>Actions</strong></TableCell>
+                                <TableCell sx={{ width: 'auto' }}><strong>All Courses</strong></TableCell>
+                                <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: '1%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {filteredCourses.map((course) => (
                                 <TableRow key={course.id} hover>
                                     <TableCell>
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Typography
-                                                variant="body1"
-                                                onClick={() => {
-                                                    setSelectedCourse(course);
-                                                    setStatsOpen(true);
-                                                }}
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    color: 'primary.main',
-                                                    cursor: 'pointer',
-                                                    '&:hover': { textDecoration: 'underline' },
-                                                }}
+                                        <Stack direction="row" spacing={2} alignItems="center">
+                                            {/* Thumbnail */}
+                                            <Avatar
+                                                src={course.thumbnail}
+                                                variant="rounded"
+                                                sx={{ width: 64, height: 36, bgcolor: 'action.hover' }}
                                             >
-                                                {course.title}
-                                            </Typography>
-                                            <IconButton
-                                                component={Link}
-                                                to={`/courses/${course.id}`}
-                                                target="_blank"
-                                                size="small"
-                                                title="View Public Page"
-                                                sx={{ opacity: 0.5, '&:hover': { opacity: 1 } }}
-                                            >
-                                                <LaunchIcon fontSize="small" />
-                                            </IconButton>
+                                                <ImageIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                                            </Avatar>
+
+                                            {/* Title & Instructor */}
+                                            <Box>
+                                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                    <Typography
+                                                        variant="subtitle2"
+                                                        fontWeight={600}
+                                                        onClick={() => {
+                                                            setSelectedCourse(course);
+                                                            setStatsOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+                                                        }}
+                                                    >
+                                                        {course.title}
+                                                    </Typography>
+                                                    <IconButton
+                                                        component={Link}
+                                                        to={`/courses/${course.id}`}
+                                                        target="_blank"
+                                                        size="small"
+                                                        sx={{
+                                                            padding: 0.5,
+                                                            color: 'action.active',
+                                                            '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' }
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <LaunchIcon sx={{ fontSize: 18 }} />
+                                                    </IconButton>
+                                                </Stack>
+
+                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                                    <Chip
+                                                        label={course.isPublished ? 'Published' : 'Draft'}
+                                                        color={course.isPublished ? 'success' : 'warning'}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                                    />
+                                                    {hasRole(ROLES.ADMIN) && (
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            by {course.instructorName}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            </Box>
                                         </Stack>
                                     </TableCell>
-                                    {hasRole(ROLES.ADMIN) && (
-                                        <TableCell>
-                                            <Chip
-                                                label={course.instructorName}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ maxWidth: 150 }}
-                                            />
-                                        </TableCell>
-                                    )}
-                                    <TableCell>
-                                        <Typography color="text.secondary">
-                                            {course.category}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="center">{course.lessonsCount}</TableCell>
-                                    <TableCell align="center">{course.studentsCount.toLocaleString()}</TableCell>
-                                    <TableCell align="center">
-                                        <Chip
-                                            label={course.isPublished ? 'Published' : 'Draft'}
-                                            color={course.isPublished ? 'success' : 'warning'}
-                                            size="small"
-                                        />
-                                    </TableCell>
+
                                     <TableCell align="right">
-                                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                            <IconButton
-                                                onClick={() => handleTogglePublish(course.id)}
-                                                title={course.isPublished ? 'Unpublish' : 'Publish'}
-                                                size="small"
-                                            >
-                                                {course.isPublished ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                                            </IconButton>
-                                            <IconButton
-                                                component={Link}
-                                                to={`/admin/courses/${course.id}/edit`}
-                                                title="Edit"
-                                                size="small"
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={() => handleDelete(course.id)}
-                                                title="Delete"
-                                                size="small"
-                                                color="error"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Stack>
+                                        <IconButton
+                                            onClick={(e) => handleActionMenuOpen(e, course)}
+                                            // Removed size="small" to make it standard size (medium)
+                                            sx={{ p: 1 }} // Add padding for larger touch target
+                                        >
+                                            <MoreHorizIcon sx={{ fontSize: 28 }} />
+                                        </IconButton>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -300,6 +343,37 @@ export function ManageCourses() {
                         </Box>
                     )}
                 </TableContainer>
+
+                <Menu
+                    anchorEl={actionMenuAnchor}
+                    open={Boolean(actionMenuAnchor)}
+                    onClose={handleActionMenuClose}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    PaperProps={{
+                        elevation: 3,
+                        sx: { minWidth: 180, mt: 1 }
+                    }}
+                >
+                    <MenuItem component={Link} to={`/admin/courses/${actionMenuCourse?.id}/edit`} onClick={handleActionMenuClose}>
+                        <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Edit Course</ListItemText>
+                    </MenuItem>
+
+                    <MenuItem onClick={() => handleMenuAction('toggle-publish')}>
+                        <ListItemIcon>
+                            {actionMenuCourse?.isPublished ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                        </ListItemIcon>
+                        <ListItemText>{actionMenuCourse?.isPublished ? 'Unpublish' : 'Publish'}</ListItemText>
+                    </MenuItem>
+
+                    <Divider />
+
+                    <MenuItem onClick={() => handleMenuAction('delete')} sx={{ color: 'error.main' }}>
+                        <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+                        <ListItemText>Delete</ListItemText>
+                    </MenuItem>
+                </Menu>
             </Container>
 
             {/* Stats/Manage Dialog */}
