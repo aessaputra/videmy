@@ -110,7 +110,6 @@ export default function CourseStatsDialog({ open, onClose, course }) {
                     name: profile?.name || 'Unknown User',
                     email: profile?.email || 'No Email',
                     enrolledAt: enrollment.enrolledAt,
-                    enrolledAt: enrollment.enrolledAt,
                     status: profile?.status || 'active',
                     // Use Centralized Helper for Avatar (Custom + Fallback + Optimization)
                     avatar: getUserAvatar(profile)

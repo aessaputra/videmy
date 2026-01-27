@@ -108,8 +108,6 @@ export function EditCourse() {
                     youtubeUrl: newLessonData.youtubeUrl, // Schema expects youtubeUrl
                     duration: parseDuration(newLessonData.duration),
                     moduleId: newLessonData.moduleId,
-                    duration: parseDuration(newLessonData.duration),
-                    moduleId: newLessonData.moduleId,
                     order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length,
                     content: '', // Default content
                     isFree: false // Default locked
