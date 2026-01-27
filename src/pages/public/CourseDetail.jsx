@@ -31,7 +31,7 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
-import { databases, COLLECTIONS, DATABASE_ID, Query, ID, getUserAvatar } from '../../lib/appwrite';
+import { databases, functions, COLLECTIONS, DATABASE_ID, Query, ID, getUserAvatar } from '../../lib/appwrite';
 
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
@@ -56,6 +56,7 @@ export function CourseDetail() {
     // State
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [enrolling, setEnrolling] = useState(false);
 
     useEffect(() => {
         const fetchCourseData = async () => {
@@ -169,6 +170,7 @@ export function CourseDetail() {
                     title: courseDoc.title,
                     description: courseDoc.description,
                     category: courseDoc.category || 'General',
+                    price: courseDoc.price || 0, // Ensure price is present
                     thumbnail: courseDoc.thumbnail || 'https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=1200',
                     instructorId: courseDoc.instructorId, // For owner detection
                     instructor: instructorData,
@@ -233,61 +235,6 @@ export function CourseDetail() {
         );
     }
 
-    const handleEnroll = async () => {
-        if (!isAuthenticated) {
-            toast.error('Please login to enroll in this course');
-            navigate('/login');
-            return;
-        }
-
-        try {
-            // Double check enrollment
-            if (course.isEnrolled) {
-                return handleStartLearning();
-            }
-
-            const enrollment = await databases.createDocument(
-                DATABASE_ID,
-                COLLECTIONS.ENROLLMENTS,
-                ID.unique(),
-                {
-                    userId: user.$id,
-                    courseId: course.id,
-                    enrolledAt: new Date().toISOString()
-                }
-            );
-
-            setCourse(prev => ({
-                ...prev,
-                isEnrolled: true,
-                studentsCount: (prev.studentsCount || 0) + 1
-            }));
-
-            // Sync Student Count to Cache Field in Database (Best Practice)
-            // Use live count (total) + 1 as the new source of truth
-            try {
-                await databases.updateDocument(
-                    DATABASE_ID,
-                    COLLECTIONS.COURSES,
-                    course.id,
-                    {
-                        studentsCount: (course.studentsCount || 0) + 1
-                    }
-                );
-            } catch (updateError) {
-                console.warn('Failed to update cached student count:', updateError);
-                // Non-blocking: UI is already updated
-            }
-
-            toast.success('Successfully enrolled!');
-            handleStartLearning();
-
-        } catch (error) {
-            console.error('Enrollment failed:', error);
-            toast.error('Failed to enroll. Please try again.');
-        }
-    };
-
     const handleStartLearning = () => {
         if (course?.modules?.[0]?.lessons?.[0]) {
             navigate(`/learn/${course.id}/${course.modules[0].lessons[0].id}`);
@@ -296,10 +243,88 @@ export function CourseDetail() {
         }
     };
 
+    const handleEnroll = async () => {
+        if (!isAuthenticated) {
+            toast.error('Please login to enroll in this course');
+            navigate('/login');
+            return;
+        }
+
+        try {
+            setEnrolling(true);
+
+            // Double check enrollment
+            if (course.isEnrolled) {
+                setEnrolling(false);
+                return handleStartLearning();
+            }
+
+            // 1. Check if Free
+            if (!course.price || course.price === 0) {
+                // Direct Enroll logic for free courses
+                await databases.createDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.ENROLLMENTS,
+                    ID.unique(),
+                    {
+                        userId: user.$id,
+                        courseId: course.id,
+                        enrolledAt: new Date().toISOString()
+                    }
+                );
+
+                setCourse(prev => ({
+                    ...prev,
+                    isEnrolled: true,
+                    studentsCount: (prev.studentsCount || 0) + 1
+                }));
+
+                toast.success('Successfully enrolled!');
+                handleStartLearning();
+                setEnrolling(false);
+
+            } else {
+                // 2. Paid Course - Use Payment Service
+                toast.loading('Redirecting to payment...');
+
+                const execution = await functions.createExecution(
+                    import.meta.env.VITE_APPWRITE_FUNCTION_ID,
+                    JSON.stringify({
+                        courseId: id,
+                        successUrl: window.location.origin + '/payment-success',
+                        cancelUrl: window.location.href
+                    }),
+                    false, // Async
+                    '/checkout', // Path
+                    'POST' // Method
+                );
+
+                if (execution.status === 'completed') {
+                    const response = JSON.parse(execution.responseBody);
+                    console.log('Payment Response:', response); // DEBUG LOG
+                    if (response.ok && response.url) {
+                        window.location.href = response.url;
+                    } else {
+                        toast.error(response.error || 'Payment initialization failed');
+                        setEnrolling(false);
+                    }
+                } else {
+                    toast.error('Server execution failed');
+                    setEnrolling(false);
+                }
+            }
+
+        } catch (error) {
+            console.error('Enrollment error:', error);
+            toast.error('Failed to enroll. Please try again.');
+            setEnrolling(false);
+        }
+    };
+
     const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
     return (
-        <Box sx={{ py: { xs: 4, md: 6 } }}>
+        <Box sx={{ py: { xs: 4, md: 6 } }} >
             <Container maxWidth="lg">
                 {/* Course Header */}
                 <Grid container spacing={4} sx={{ mb: 6 }}>
@@ -404,15 +429,26 @@ export function CourseDetail() {
                                     );
                                 } else {
                                     // Not enrolled: Show enroll button
+                                    const formatPrice = (price) => {
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0
+                                        }).format(price);
+                                    };
+
                                     return (
                                         <Button
                                             variant="contained"
                                             size="large"
                                             onClick={handleEnroll}
-                                            startIcon={<PlayIcon />}
+                                            disabled={enrolling}
+                                            startIcon={enrolling ? <CircularProgress size={20} /> : <PlayIcon />}
                                             sx={{ width: { xs: '100%', md: 'auto' } }}
                                         >
-                                            Enroll Now - Free
+                                            {course.price && course.price > 0
+                                                ? `Buy Now - ${formatPrice(course.price)}`
+                                                : 'Enroll Now - Free'}
                                         </Button>
                                     );
                                 }
@@ -495,7 +531,7 @@ export function CourseDetail() {
                     ))}
                 </Box>
             </Container>
-        </Box>
+        </Box >
     );
 }
 

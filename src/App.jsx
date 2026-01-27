@@ -14,7 +14,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute, GuestRoute, Loading } from './components/common';
 
 // Public Pages
-import { Home, Login, Register, Courses, CourseDetail } from './pages/public';
+import { Home, Login, Register, Courses, CourseDetail, PaymentSuccess } from './pages/public';
 
 // Student Pages
 import { Dashboard, Learn } from './pages/student';
@@ -68,11 +68,16 @@ function App() {
                 }
               />
 
+              {/* Payment Success - Standalone Layout */}
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+
               {/* Public Routes with Main Layout (Navbar + Footer) */}
               <Route element={<Layout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/courses" element={<Courses />} />
+                <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseDetail />} />
+
               </Route>
 
               {/* Dashboard Routes with DashboardLayout (Sidebar) */}

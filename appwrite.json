@@ -1,0 +1,23 @@
+{
+    "projectId": "6974e8ea002df44a11c6",
+    "projectName": "Videmy",
+    "functions": [
+        {
+            "$id": "69786cf5002c98d74ce7",
+            "name": "Payment Service",
+            "runtime": "node-18.0",
+            "path": "functions/payment-service",
+            "entrypoint": "src/main.js",
+            "ignore": [
+                "node_modules",
+                ".env"
+            ],
+            "execute": [
+                "any"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15
+        }
+    ]
+}

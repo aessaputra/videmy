@@ -146,14 +146,35 @@ export function CreateCourse() {
                             </TextField>
 
                             <TextField
-                                label="Price ($)"
-                                name="price"
-                                type="number"
-                                value={formData.price}
-                                onChange={handleChange}
+                                select
+                                label="Course Type"
+                                value={formData.price > 0 ? 'paid' : 'free'}
+                                onChange={(e) => {
+                                    const isPaid = e.target.value === 'paid';
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        price: isPaid ? (prev.price || 50000) : 0
+                                    }));
+                                }}
                                 fullWidth
-                                InputProps={{ inputProps: { min: 0 } }}
-                            />
+                            >
+                                <MenuItem value="free">Free</MenuItem>
+                                <MenuItem value="paid">Paid</MenuItem>
+                            </TextField>
+
+                            {formData.price > 0 && (
+                                <TextField
+                                    label="Price (IDR)"
+                                    name="price"
+                                    type="number"
+                                    value={formData.price}
+                                    onChange={handleChange}
+                                    required
+                                    fullWidth
+                                    InputProps={{ inputProps: { min: 10000 } }}
+                                    helperText="Minimum Rp 10.000"
+                                />
+                            )}
                         </Stack>
 
                         <ThumbnailUploader

@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Avatars, ID, Query, Permission, Role } from 'appwrite';
+import { Client, Account, Databases, Storage, Avatars, Functions, ID, Query, Permission, Role } from 'appwrite';
 
 /**
  * Appwrite Client Configuration
@@ -23,6 +23,7 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const avatars = new Avatars(client);
+export const functions = new Functions(client);
 
 // Export utilities
 export { ID, Query, Permission, Role };
