@@ -15,6 +15,20 @@ import {
 } from '@mui/icons-material';
 
 /**
+ * Format price to Indonesian Rupiah
+ * @param {number} price - Price in IDR
+ * @returns {string} Formatted price string
+ */
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(price);
+};
+
+/**
  * Course Card Component
  * 
  * MUI-based card displaying course preview with thumbnail, title, and metadata.
@@ -32,10 +46,14 @@ export function CourseCard({ course }) {
         lessonsCount = 0,
         studentsCount = 0,
         duration,
+        price = 0,
     } = course;
 
     // Generate placeholder thumbnail if none provided
     const imageUrl = thumbnail || `https://via.placeholder.com/800x450/0d9488/ffffff?text=${encodeURIComponent(title)}`;
+
+    // Determine if course is free
+    const isFree = !price || price === 0;
 
     return (
         <Card
@@ -63,14 +81,15 @@ export function CourseCard({ course }) {
             />
 
             <CardContent>
-                {category && (
-                    <Chip
-                        label={category}
-                        size="small"
-                        color="primary"
-                        sx={{ mb: 1.5 }}
-                    />
-                )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                    {category && (
+                        <Chip
+                            label={category}
+                            size="small"
+                            color="primary"
+                        />
+                    )}
+                </Box>
 
                 <Typography
                     variant="h6"
@@ -107,6 +126,26 @@ export function CourseCard({ course }) {
                     </Typography>
                 )}
 
+                {/* Price Display */}
+                <Box sx={{ mb: 2 }}>
+                    {isFree ? (
+                        <Chip
+                            label="Free"
+                            size="small"
+                            color="success"
+                            sx={{ fontWeight: 600 }}
+                        />
+                    ) : (
+                        <Typography
+                            variant="h6"
+                            color="primary"
+                            fontWeight={700}
+                        >
+                            {formatPrice(price)}
+                        </Typography>
+                    )}
+                </Box>
+
                 <Stack
                     direction="row"
                     spacing={2}
@@ -137,3 +176,4 @@ export function CourseCard({ course }) {
 }
 
 export default CourseCard;
+

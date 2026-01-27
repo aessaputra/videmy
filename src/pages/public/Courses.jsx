@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { motion as MotionLibrary } from 'motion/react';
-import { CourseCard } from '../../components/course';
+import { CourseCard, CourseCardSkeleton } from '../../components/course';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { toast } from 'sonner';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
@@ -143,13 +143,24 @@ export function Courses() {
 
                 {/* Course Grid with auto-animate */}
                 <Grid container spacing={3} ref={animateRef}>
-                    {filteredCourses.map((course) => (
+                    {/* Skeleton Loading State */}
+                    {loading && (
+                        [...Array(6)].map((_, index) => (
+                            <Grid key={`skeleton-${index}`} size={{ xs: 12, sm: 6, md: 4 }}>
+                                <CourseCardSkeleton />
+                            </Grid>
+                        ))
+                    )}
+
+                    {/* Course Cards */}
+                    {!loading && filteredCourses.map((course) => (
                         <Grid key={course.id} size={{ xs: 12, sm: 6, md: 4 }}>
                             <CourseCard course={course} />
                         </Grid>
                     ))}
 
-                    {filteredCourses.length === 0 && (
+                    {/* Empty State */}
+                    {!loading && filteredCourses.length === 0 && (
                         <Grid size={12}>
                             <Box
                                 sx={{

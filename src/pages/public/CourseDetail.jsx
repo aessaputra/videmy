@@ -96,15 +96,26 @@ export function CourseDetail() {
                     allLessons = lessonsRes.documents;
                 }
 
-                // 4. Fetch Real Student Count (Live)
-                const enrollmentsCountRes = await databases.listDocuments(
-                    DATABASE_ID,
-                    COLLECTIONS.ENROLLMENTS,
-                    [
-                        Query.equal('courseId', id),
-                        Query.limit(1) // We rely on 'total' property
-                    ]
-                );
+                // 4. Fetch Real Student Count (Live) - Only for authenticated users
+                // Enrollments collection requires authentication, so we fall back to cached count for public users
+                let studentsCount = courseDoc.studentsCount || 0;
+
+                if (user) {
+                    try {
+                        const enrollmentsCountRes = await databases.listDocuments(
+                            DATABASE_ID,
+                            COLLECTIONS.ENROLLMENTS,
+                            [
+                                Query.equal('courseId', id),
+                                Query.limit(1) // We rely on 'total' property
+                            ]
+                        );
+                        studentsCount = enrollmentsCountRes.total || studentsCount;
+                    } catch (enrollErr) {
+                        console.warn('Could not fetch live enrollment count:', enrollErr);
+                        // Continue with cached count
+                    }
+                }
 
                 // 4b. User Progress (Existing)
                 let completedLessonIds = [];
@@ -140,11 +151,13 @@ export function CourseDetail() {
                 }));
 
                 // 1b. Fetch Instructor Details
+                // USERS collection now has read("any") permission - accessible to all users
                 let instructorData = {
-                    name: 'Unknown Instructor',
+                    name: courseDoc.instructorName || 'Unknown Instructor',
                     avatar: '',
                 };
 
+                // Fetch instructor profile (USERS collection is now publicly readable)
                 if (courseDoc.instructorId) {
                     try {
                         const instructorDocs = await databases.listDocuments(
@@ -156,12 +169,13 @@ export function CourseDetail() {
                         if (instructorDocs.documents.length > 0) {
                             const instDoc = instructorDocs.documents[0];
                             instructorData = {
-                                name: instDoc.name,
+                                name: instDoc.name || instructorData.name,
                                 avatar: getUserAvatar(instDoc)
                             };
                         }
                     } catch (err) {
-                        console.warn('Failed to fetch instructor:', err);
+                        console.warn('Failed to fetch instructor profile:', err);
+                        // Fallback to denormalized instructorName from course doc
                     }
                 }
 
@@ -175,7 +189,7 @@ export function CourseDetail() {
                     instructorId: courseDoc.instructorId, // For owner detection
                     instructor: instructorData,
                     lessonsCount: allLessons.length,
-                    studentsCount: enrollmentsCountRes.total || 0,
+                    studentsCount: studentsCount,
                     duration: 'Self-paced',
                     isEnrolled: false,
                     modules: fullModules,
