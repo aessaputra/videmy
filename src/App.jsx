@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 // Context
+import { ConfirmProvider } from './context/ConfirmContext';
 import { AuthProvider, ROLES } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -47,125 +48,127 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Public Auth - Standalone Layout */}
-              <Route
-                path="/login"
-                element={
-                  <GuestRoute>
-                    <Login />
-                  </GuestRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <GuestRoute>
-                    <Register />
-                  </GuestRoute>
-                }
-              />
-
-              {/* Payment Success - Standalone Layout */}
-              <Route path="/payment-success" element={<PaymentSuccess />} />
-
-              {/* Public Routes with Main Layout (Navbar + Footer) */}
-              <Route element={<Layout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/courses" element={<Courses />} />
-                <Route path="/courses" element={<Courses />} />
-                <Route path="/courses/:id" element={<CourseDetail />} />
-
-              </Route>
-
-              {/* Dashboard Routes with DashboardLayout (Sidebar) */}
-              <Route element={<DashboardLayout />}>
-                {/* Student Dashboard */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/profile" element={<Profile />} />
-
-                {/* Instructor+ Routes */}
+        <ConfirmProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public Auth - Standalone Layout */}
                 <Route
-                  path="/admin/courses"
+                  path="/login"
                   element={
-                    <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
-                      <ManageCourses />
-                    </ProtectedRoute>
+                    <GuestRoute>
+                      <Login />
+                    </GuestRoute>
                   }
                 />
                 <Route
-                  path="/admin/courses/new"
+                  path="/register"
                   element={
-                    <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
-                      <CreateCourse />
-                    </ProtectedRoute>
+                    <GuestRoute>
+                      <Register />
+                    </GuestRoute>
                   }
                 />
+
+                {/* Payment Success - Standalone Layout */}
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+
+                {/* Public Routes with Main Layout (Navbar + Footer) */}
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses/:id" element={<CourseDetail />} />
+
+                </Route>
+
+                {/* Dashboard Routes with DashboardLayout (Sidebar) */}
+                <Route element={<DashboardLayout />}>
+                  {/* Student Dashboard */}
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/profile" element={<Profile />} />
+
+                  {/* Instructor+ Routes */}
+                  <Route
+                    path="/admin/courses"
+                    element={
+                      <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
+                        <ManageCourses />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/courses/new"
+                    element={
+                      <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
+                        <CreateCourse />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/courses/:id/edit"
+                    element={
+                      <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
+                        <EditCourse />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Admin Only Routes */}
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <ProtectedRoute roles={[ROLES.ADMIN]}>
+                        <ManageUsers />
+                      </ProtectedRoute>
+                    }
+                  />
+
+
+                  {/* Common Authenticated Routes */}
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+
+                {/* Learn Page - Full Width (No Sidebar) */}
                 <Route
-                  path="/admin/courses/:id/edit"
+                  path="/learn/:courseId/:lessonId"
                   element={
-                    <ProtectedRoute roles={[ROLES.INSTRUCTOR, ROLES.ADMIN]}>
-                      <EditCourse />
+                    <ProtectedRoute>
+                      <Learn />
                     </ProtectedRoute>
                   }
                 />
 
-                {/* Admin Only Routes */}
+                {/* Debug Route - Temporary */}
+                <Route path="/debug" element={<ConnectionStatus />} />
+
+                {/* 404 Not Found */}
                 <Route
-                  path="/admin/users"
+                  path="*"
                   element={
-                    <ProtectedRoute roles={[ROLES.ADMIN]}>
-                      <ManageUsers />
-                    </ProtectedRoute>
+                    <Layout>
+                      <div className="empty-state" style={{ minHeight: '60vh' }}>
+                        <div className="empty-state__icon">🔍</div>
+                        <h3 className="empty-state__title">Page Not Found</h3>
+                        <p className="empty-state__desc">
+                          The page you're looking for doesn't exist.
+                        </p>
+                      </div>
+                    </Layout>
                   }
                 />
+              </Routes>
+            </BrowserRouter>
 
-
-                {/* Common Authenticated Routes */}
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-
-              {/* Learn Page - Full Width (No Sidebar) */}
-              <Route
-                path="/learn/:courseId/:lessonId"
-                element={
-                  <ProtectedRoute>
-                    <Learn />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Debug Route - Temporary */}
-              <Route path="/debug" element={<ConnectionStatus />} />
-
-              {/* 404 Not Found */}
-              <Route
-                path="*"
-                element={
-                  <Layout>
-                    <div className="empty-state" style={{ minHeight: '60vh' }}>
-                      <div className="empty-state__icon">🔍</div>
-                      <h3 className="empty-state__title">Page Not Found</h3>
-                      <p className="empty-state__desc">
-                        The page you're looking for doesn't exist.
-                      </p>
-                    </div>
-                  </Layout>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-
-          {/* Toast Notifications */}
-          <Toaster
-            position="bottom-right"
-            richColors
-            closeButton
-            duration={4000}
-          />
-        </AuthProvider>
+            {/* Toast Notifications */}
+            <Toaster
+              position="bottom-right"
+              richColors
+              closeButton
+              duration={4000}
+            />
+          </AuthProvider>
+        </ConfirmProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -30,7 +30,7 @@ export default async ({ req, res, log, error }) => {
             ? JSON.parse(rawPayload)
             : rawPayload;
 
-        const { action, userId, documentId, status } = payload;
+        const { action, userId, documentId, status, role } = payload;
 
         // 2. Simple Routing
         if (action === 'toggle_status') {
@@ -87,6 +87,32 @@ export default async ({ req, res, log, error }) => {
             return res.json({
                 success: true,
                 data: updatedUser
+            });
+        } else if (action === 'update_role') {
+            if (!documentId) throw new Error('DocumentId is required');
+            if (!role) throw new Error('Role is required');
+
+            // Update Database Record
+            const databases = new Databases(client);
+            const databaseId = process.env.DATABASE_ID;
+            const collectionId = process.env.COLLECTION_USERS_ID;
+
+            if (!databaseId || !collectionId) {
+                throw new Error('Server configuration error: Missing Database or Collection ID');
+            }
+
+            await databases.updateDocument(
+                databaseId,
+                collectionId,
+                documentId,
+                { role: role }
+            );
+
+            log(`User document ${documentId} role updated to ${role}`);
+
+            return res.json({
+                success: true,
+                message: 'Role updated successfully'
             });
         }
 

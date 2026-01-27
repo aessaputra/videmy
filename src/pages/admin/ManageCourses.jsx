@@ -36,6 +36,7 @@ import {
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query } from '../../lib/appwrite';
 
 import CourseStatsDialog from '../../components/admin/CourseStatsDialog';
@@ -47,6 +48,7 @@ import CourseStatsDialog from '../../components/admin/CourseStatsDialog';
  */
 export function ManageCourses() {
     const { user, hasRole, ROLES } = useAuth();
+    const confirm = useConfirm();
     const [searchQuery, setSearchQuery] = useState('');
 
     // Demo courses (will be fetched from Appwrite later)
@@ -146,22 +148,33 @@ export function ManageCourses() {
         }
     };
 
-    const handleDelete = async (courseId) => {
-        if (window.confirm('Are you sure you want to delete this course? This cannot be undone.')) {
-            try {
-                await databases.deleteDocument(
-                    DATABASE_ID,
-                    COLLECTIONS.COURSES,
-                    courseId
-                );
+    const handleDelete = (courseId) => {
+        // Wrap in setTimeout to prevent Menu event conflict (Ghost clicks)
+        setTimeout(async () => {
+            const isConfirmed = await confirm({
+                title: 'Delete Course?',
+                description: 'Are you sure you want to delete this course? This cannot be undone and will remove all lessons associated with it.',
+                confirmationText: 'Delete',
+                cancellationText: 'Cancel',
+                confirmationButtonProps: { variant: 'contained', color: 'error', autoFocus: true },
+            });
 
-                setCourses(courses.filter(c => c.id !== courseId));
-                toast.success('Course deleted');
-            } catch (error) {
-                console.error('Delete failed:', error);
-                toast.error('Failed to delete course');
+            if (isConfirmed) {
+                try {
+                    await databases.deleteDocument(
+                        DATABASE_ID,
+                        COLLECTIONS.COURSES,
+                        courseId
+                    );
+
+                    setCourses(courses.filter(c => c.id !== courseId));
+                    toast.success('Course deleted');
+                } catch (error) {
+                    console.error('Delete failed:', error);
+                    toast.error('Failed to delete course');
+                }
             }
-        }
+        }, 100);
     };
 
     const handleActionMenuOpen = (event, course) => {
