@@ -138,7 +138,7 @@ export function InstructorDashboard() {
 
                 {/* Quick Actions */}
                 <Grid container spacing={4}>
-                    <Grid item xs={12} md={8}>
+                    <Grid item xs={12}>
                         <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
                             <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h6" fontWeight={600}>
@@ -188,30 +188,6 @@ export function InstructorDashboard() {
                                     </Box>
                                 )}
                             </Box>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', height: '100%', bgcolor: 'primary.main', color: 'white' }}>
-                            <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '100%', justifyContent: 'center' }}>
-                                <Box sx={{ mb: 2, p: 1, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2 }}>
-                                    <AddIcon />
-                                </Box>
-                                <Typography variant="h5" fontWeight={700} gutterBottom>
-                                    Create New Course
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 3, opacity: 0.9 }}>
-                                    Ready to share your knowledge? Create a new course and reach students worldwide.
-                                </Typography>
-                                <Button
-                                    component={Link}
-                                    to="/admin/courses/new"
-                                    variant="contained"
-                                    color="inherit"
-                                    sx={{ color: 'primary.main', fontWeight: 600 }}
-                                >
-                                    Start Creating
-                                </Button>
-                            </CardContent>
                         </Card>
                     </Grid>
                 </Grid>
