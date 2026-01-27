@@ -63,9 +63,9 @@ export default function SignInCard() {
             setEmailErrorMessage('');
         }
 
-        if (!password.value || password.value.length < 6) {
+        if (!password.value) {
             setPasswordError(true);
-            setPasswordErrorMessage('Password must be at least 6 characters long.');
+            setPasswordErrorMessage('Password is required.');
             isValid = false;
         } else {
             setPasswordError(false);
@@ -96,9 +96,20 @@ export default function SignInCard() {
             toast.success('Welcome back!');
             navigate('/dashboard');
         } else {
-            toast.error(result.error || 'Login failed.');
-            setPasswordError(true);
-            setPasswordErrorMessage('Invalid credentials (or user not found)');
+            console.error('Login Error:', result);
+            if (result.type === 'user_blocked') {
+                toast.error('Your account has been deactivated. Please contact the Administrator.');
+            } else if (result.type === 'user_invalid_credentials' || result.type === 'general_argument_invalid') {
+                // Inline error only, no Toast
+                setPasswordError(true);
+                setPasswordErrorMessage('Invalid credentials (or user not found)');
+            } else if (result.type === 'general_rate_limit_exceeded') {
+                // Rate limit (429)
+                toast.error('Too many login attempts. Please try again later.');
+            } else {
+                // Other System/Network Errors
+                toast.error(result.error || 'Login failed.');
+            }
         }
         setLoading(false);
     };

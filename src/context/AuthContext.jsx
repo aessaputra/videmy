@@ -100,8 +100,10 @@ export function AuthProvider({ children }) {
                 throw new Error('Account is suspended');
             }
         } catch (error) {
-            // User not logged in or Suspended
-            console.warn('Auth Init Error:', error.message);
+            // User not logged in (401) is expected for guests
+            if (error.code !== 401) {
+                console.warn('Auth Init Error:', error.message);
+            }
             setUser(null);
         } finally {
             setLoading(false);
@@ -170,7 +172,7 @@ export function AuthProvider({ children }) {
             await init();
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: error.message, type: error.type };
         }
     };
 
