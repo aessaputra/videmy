@@ -15,7 +15,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute, GuestRoute, Loading } from './components/common';
 
 // Public Pages
-import { Home, Login, Register, Courses, CourseDetail, PaymentSuccess } from './pages/public';
+import { Home, Login, Register, Courses, CourseDetail, PaymentSuccess, PendingApproval } from './pages/public';
 
 // Student Pages
 import { Dashboard, Learn } from './pages/student';
@@ -72,6 +72,16 @@ function App() {
 
                 {/* Payment Success - Standalone Layout */}
                 <Route path="/payment-success" element={<PaymentSuccess />} />
+
+                {/* Pending Approval - Protected but Standalone */}
+                <Route
+                  path="/pending-approval"
+                  element={
+                    <ProtectedRoute>
+                      <PendingApproval />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Public Routes with Main Layout (Navbar + Footer) */}
                 <Route element={<Layout />}>

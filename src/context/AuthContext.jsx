@@ -140,8 +140,9 @@ export function AuthProvider({ children }) {
                         name: name,
                         email: email,
                         role: role,
-                        status: 'active'
+                        status: role === ROLES.INSTRUCTOR ? 'pending' : 'active'
                     }
+
                 );
             } catch (dbError) {
                 console.error('Failed to create user profile:', dbError);

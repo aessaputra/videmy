@@ -219,8 +219,8 @@ export function ManageUsers() {
                 title: isDeactivating ? 'Deactivate User?' : 'Activate User?',
                 description: isDeactivating
                     ? `This will prevent ${user.name} from logging in. Are you sure?`
-                    : `This will restore ${user.name}'s access to the platform.`,
-                confirmationText: 'Confirm',
+                    : `This will ${user.status === 'pending' ? 'approve' : 'restore'} ${user.name}'s access to the platform.`,
+                confirmationText: user.status === 'pending' ? 'Approve' : 'Confirm',
                 cancellationText: 'Cancel',
                 confirmationButtonProps: {
                     variant: 'contained',
@@ -354,6 +354,7 @@ export function ManageUsers() {
                             >
                                 <MenuItem value="all">All Status</MenuItem>
                                 <MenuItem value="active">Active</MenuItem>
+                                <MenuItem value="pending">Pending</MenuItem>
                                 <MenuItem value="inactive">Inactive</MenuItem>
                             </Select>
                         </FormControl>
@@ -433,7 +434,7 @@ export function ManageUsers() {
                                             <TableCell align="center">
                                                 <Chip
                                                     label={user.status}
-                                                    color={user.status === 'active' ? 'success' : 'warning'}
+                                                    color={user.status === 'active' ? 'success' : user.status === 'pending' ? 'warning' : 'error'}
                                                     variant={user.status === 'active' ? 'filled' : 'outlined'}
                                                     size="small"
                                                     sx={{ textTransform: 'capitalize', fontWeight: 500 }}
@@ -511,7 +512,10 @@ export function ManageUsers() {
                                 <CheckCircleIcon fontSize="small" color="success" />
                             }
                         </ListItemIcon>
-                        <ListItemText primary={menuUser.status === 'active' ? 'Block User' : 'Activate User'} />
+                        <ListItemText primary={
+                            menuUser.status === 'active' ? 'Block User' :
+                                menuUser.status === 'pending' ? 'Approve User' : 'Activate User'
+                        } />
                     </MenuItem>
                 ]}
             </Menu>

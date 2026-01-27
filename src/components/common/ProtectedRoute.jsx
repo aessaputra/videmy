@@ -13,7 +13,7 @@ import { Loading } from '../common';
  * @param {string|string[]} props.roles - Required roles (optional)
  */
 export function ProtectedRoute({ children, roles }) {
-    const { isAuthenticated, loading, hasRole } = useAuth();
+    const { isAuthenticated, loading, hasRole, user } = useAuth();
     const location = useLocation();
 
     // Show loading while checking auth
@@ -26,6 +26,28 @@ export function ProtectedRoute({ children, roles }) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
+    // Check status
+    if (user?.status === 'pending') {
+        // If they are pending, they can ONLY go to /pending-approval
+        // We handle this by checking if the *route invoking this* allows pending?
+        // Actually, cleaner way: Redirect to /pending-approval if not there.
+        // We will define /pending-approval WITHOUT this standard ProtectedRoute logic or handle it carefully.
+        // BUT, since we will use ProtectedRoute for everything, let's treat /pending-approval as a special case?
+        // No, better to have a generic check.
+        // Let's assume /pending-approval is the only place they can be.
+
+        // If we are currently AT /pending-approval, we render children.
+        // If we are NOT AT /pending-approval, we redirect TO /pending-approval.
+        if (location.pathname !== '/pending-approval') {
+            return <Navigate to="/pending-approval" replace />;
+        }
+    } else {
+        // If we are active (not pending), and try to go to pending-approval, redirect to dashboard
+        if (location.pathname === '/pending-approval') {
+            return <Navigate to="/dashboard" replace />;
+        }
+    }
+
     // Check role permission if roles are specified
     if (roles && !hasRole(roles)) {
         return <Navigate to="/dashboard" replace />;
@@ -33,6 +55,7 @@ export function ProtectedRoute({ children, roles }) {
 
     return children;
 }
+
 
 /**
  * Guest Route Component
