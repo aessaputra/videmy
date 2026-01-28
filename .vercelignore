@@ -1,0 +1,30 @@
+# Appwrite Functions
+functions/
+
+# Scripts & Backups
+scripts/
+backups/
+
+# Development files
+node_modules/
+.git/
+.env
+.env.local
+.env.*.local
+*.log
+
+# Playwright MCP
+.playwright-mcp/
+
+# Test coverage
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
