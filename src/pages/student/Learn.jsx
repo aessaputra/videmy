@@ -34,6 +34,7 @@ import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
 import { formatDuration } from '../../lib/format';
 import { VideoPlayer } from '../../components/course';
+import { LessonContent } from '../../components/student/LessonContent';
 import {
     courseDetailFields,
     moduleFields,
@@ -185,7 +186,9 @@ export function Learn() {
                         id: l.$id,
                         title: l.title,
                         youtubeUrl: l.youtubeUrl,
-                        duration: formatDuration(l.duration)
+                        duration: formatDuration(l.duration),
+                        content: l.content || '',
+                        isFree: l.isFree || false
                     }))
                 }));
 
@@ -535,6 +538,15 @@ export function Learn() {
                                     {isLessonCompleted(lessonId) ? 'Completed' : 'Mark Complete'}
                                 </Button>
                             </Stack>
+
+                            {/* Lesson Content Section */}
+                            <Box sx={{ mt: 4 }}>
+                                <LessonContent 
+                                    lesson={currentLesson} 
+                                    hasAccess={true} 
+                                    defaultExpanded={false}
+                                />
+                            </Box>
 
                             {/* Mobile Navigation Buttons (Bottom) */}
                             {isMobile && (

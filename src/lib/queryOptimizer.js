@@ -61,7 +61,7 @@ export const moduleFields = [
 
 /**
  * Lesson fields for list views
- * Excludes: content (use lessonDetailFields for full content)
+ * Includes: content for lesson display pages
  */
 export const lessonFields = [
     '$id',
@@ -70,6 +70,7 @@ export const lessonFields = [
     'youtubeUrl',
     'duration',
     'order',
+    'content',
     'isFree'
 ];
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -10,8 +10,7 @@ import {
     IconButton,
     Typography,
     Box,
-    InputAdornment,
-    Alert
+    InputAdornment
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -24,6 +23,7 @@ import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { parseDurationToSeconds, formatDuration } from '../../lib/format.js';
 
 // Zod schema for lesson validation
 const lessonSchema = z.object({
@@ -36,9 +36,18 @@ const lessonSchema = z.object({
             const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)[a-zA-Z0-9_-]{11}/;
             return youtubeRegex.test(url);
         }, 'Please enter a valid YouTube URL'),
-    duration: z.number()
-        .min(0, 'Duration cannot be negative')
-        .max(86400, 'Duration cannot exceed 24 hours'), // 24 hours in seconds
+    durationInput: z.string()
+        .refine((input) => {
+            if (!input || input.trim() === '') return true; // Optional field
+            const seconds = parseDurationToSeconds(input);
+            return seconds > 0; // Must be valid and positive
+        }, 'Please enter a valid duration (MM:SS or HH:MM:SS)')
+        .refine((input) => {
+            if (!input || input.trim() === '') return true; // Optional field
+            const seconds = parseDurationToSeconds(input);
+            return seconds <= 86400; // Max 24 hours (86400 seconds)
+        }, 'Duration cannot exceed 24 hours')
+        .transform((input) => parseDurationToSeconds(input)),
     content: z.string()
         .max(5000, 'Content cannot exceed 5000 characters')
         .optional()
@@ -69,10 +78,13 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
         defaultValues: {
             title: '',
             youtubeUrl: '',
-            duration: 0,
+            durationInput: '',
             content: ''
         }
     });
+
+    // Watch required fields for quick submit validation
+    const watchedFields = watch(['title', 'youtubeUrl']);
 
     // Initialize form data when lesson changes
     useEffect(() => {
@@ -80,72 +92,11 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
             reset({
                 title: lesson.title || '',
                 youtubeUrl: lesson.youtubeUrl || '',
-                duration: lesson.duration || 0,
+                durationInput: formatDuration(lesson.duration || 0),
                 content: lesson.content || ''
             });
         }
     }, [lesson, open, reset]);
-
-    // Helper: Convert input to seconds with HOUR-BASED logic
-    const parseDurationInput = (input) => {
-        if (!input) return 0;
-        
-        // Pure number without colons
-        if (!isNaN(input)) {
-            const num = parseInt(input, 10);
-            // If number > 59, treat as seconds (e.g., 930 seconds)
-            // If number <= 59, treat as hours (e.g., 3 = 3 hours)
-            if (num > 59) return num;
-            return num * 3600; // Convert hours to seconds
-        }
-        
-        const parts = input.toString().split(':').map(p => parseInt(p, 10));
-        
-        // Validate time parts
-        if (parts.some(p => isNaN(p) || p < 0)) return 0;
-        
-        if (parts.length === 2) {
-            // h:m format (hours:minutes)
-            const [h, m] = parts;
-            if (m >= 60) return 0; // Invalid minutes
-            return (h * 3600) + (m * 60);
-        }
-        if (parts.length === 3) {
-            // h:m:s format (hours:minutes:seconds)
-            const [h, m, s] = parts;
-            if (m >= 60 || s >= 60) return 0; // Invalid minutes or seconds
-            return (h * 3600) + (m * 60) + s;
-        }
-        return 0;
-    };
-
-    // Helper: Convert seconds to most appropriate display format
-    const formatDurationForInput = (seconds) => {
-        if (!seconds || seconds === 0) return '';
-        
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = seconds % 60;
-        
-        // If we have hours, show in h:m:s or h:m format
-        if (h > 0) {
-            if (s > 0) {
-                // Full h:m:s format when seconds are present
-                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            } else {
-                // h:m format when no seconds
-                return `${h}:${m.toString().padStart(2, '0')}`;
-            }
-        }
-        
-        // If no hours but have minutes, show m:s
-        if (m > 0) {
-            return `${m}:${s.toString().padStart(2, '0')}`;
-        }
-        
-        // Just seconds
-        return s.toString();
-    };
 
     // Form submission handler
     const onSubmit = async (data) => {
@@ -153,7 +104,7 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
             const updatedData = {
                 title: data.title.trim(),
                 youtubeUrl: data.youtubeUrl.trim(),
-                duration: data.duration,
+                duration: data.durationInput, // This is already parsed to seconds by Zod transform
                 content: data.content?.trim() || ''
             };
 
@@ -175,7 +126,16 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
     const handleKeyDown = (event) => {
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
             event.preventDefault();
-            handleSubmit(onSubmit)();
+            
+            // Check if required fields are filled for quick submit
+            const [title, youtubeUrl] = watchedFields;
+            const hasRequiredFields = title?.trim().length >= 3 && youtubeUrl?.trim().length > 0;
+            
+            if (hasRequiredFields) {
+                handleSubmit(onSubmit)();
+            } else {
+                toast.error('Please fill in the title (min 3 characters) and YouTube URL before using quick submit');
+            }
         } else if (event.key === 'Escape') {
             event.preventDefault();
             handleClose();
@@ -209,12 +169,6 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <DialogContent>
                     <Stack spacing={3} sx={{ mt: 1 }}>
-                        <Alert severity="info" sx={{ mb: 2 }}>
-                            <Typography variant="body2">
-                                <strong>Editing Tips:</strong> Use Ctrl+Enter to save quickly. All fields are required except content.
-                            </Typography>
-                        </Alert>
-
                         {/* Lesson Title */}
                         <Controller
                             name="title"
@@ -268,169 +222,34 @@ export function LessonEditDialog({ open, onClose, lesson, onSave }) {
                             )}
                         />
 
-                        {/* Duration */}
+                        {/* Duration - Manual Input with Clear Format */}
                         <Controller
-                            name="duration"
+                            name="durationInput"
                             control={control}
-                            render={({ field, fieldState }) => {
-                                // Enhanced state management for natural typing flow with auto-formatting
-                                const [displayValue, setDisplayValue] = React.useState(() => 
-                                    formatDurationForInput(field.value)
-                                );
-                                const [isTyping, setIsTyping] = React.useState(false);
-                                const [typingTimer, setTypingTimer] = React.useState(null);
-                                const inputRef = React.useRef(null);
-                                
-                                // Update display value when field value changes (e.g., form reset)
-                                React.useEffect(() => {
-                                    if (!isTyping) {
-                                        setDisplayValue(formatDurationForInput(field.value));
+                            render={({ field, fieldState }) => (
+                                <TextField
+                                    {...field}
+                                    label="Duration"
+                                    fullWidth
+                                    error={!!fieldState.error}
+                                    helperText={
+                                        fieldState.error?.message || 
+                                        'Format:HH:MM:SS or MM:SS'
                                     }
-                                }, [field.value, isTyping]);
-                                
-                                // Clean up timer on unmount
-                                React.useEffect(() => {
-                                    return () => {
-                                        if (typingTimer) clearTimeout(typingTimer);
-                                    };
-                                }, [typingTimer]);
-                                
-                                // Smart hour-based auto-formatting function
-                                const applyAutoFormatting = (input) => {
-                                    // Single digit: "3" → "3:" (3 hours)
-                                    if (/^\d$/.test(input)) {
-                                        return input + ':';
-                                    }
-                                    // Two digits: "12" → "12:" (12 hours)
-                                    if (/^\d{2}$/.test(input)) {
-                                        return input + ':';
-                                    }
-                                    // Hour:minute pattern: "3:21" → "3:21:" (ready for seconds)
-                                    if (/^\d{1,2}:\d{2}$/.test(input)) {
-                                        return input + ':';
-                                    }
-                                    return input;
-                                };
-                                
-                                // Enhanced validation for better UX feedback
-                                const isValidFormat = React.useMemo(() => {
-                                    if (!displayValue) return true; // Empty is valid
-                                    if (!isNaN(Number(displayValue))) return Number(displayValue) >= 0; // Pure numbers must be non-negative
-                                    if (displayValue.includes(':')) {
-                                        // Validate time format patterns (allow incomplete during typing)
-                                        const timePattern = /^\d{1,2}(:\d{0,2})?(:\d{0,2})?$/;
-                                        if (!timePattern.test(displayValue)) return false;
-                                        
-                                        // Validate completed time values
-                                        const parts = displayValue.split(':');
-                                        if (parts.length >= 2 && parts[1].length === 2) {
-                                            const seconds = parseInt(parts[1], 10);
-                                            if (seconds >= 60) return false;
+                                    disabled={isSubmitting}
+                                    placeholder="41:35 or 1:04:30 or 120"
+                                    inputMode="text"
+                                    slotProps={{
+                                        input: {
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <TimeIcon fontSize="small" />
+                                                </InputAdornment>
+                                            )
                                         }
-                                        if (parts.length === 3 && parts[2].length === 2) {
-                                            const minutes = parseInt(parts[1], 10);
-                                            const seconds = parseInt(parts[2], 10);
-                                            if (minutes >= 60 || seconds >= 60) return false;
-                                        }
-                                        return true;
-                                    }
-                                    // If it contains non-digits and no colons, it's invalid
-                                    return /^\d+$/.test(displayValue);
-                                }, [displayValue]);
-                                
-                                const handleInputChange = (e) => {
-                                    const inputValue = e.target.value;
-                                    setDisplayValue(inputValue);
-                                    setIsTyping(true);
-                                    
-                                    // Clear existing timer
-                                    if (typingTimer) clearTimeout(typingTimer);
-                                    
-                                    // Parse and update form field for validation (but don't format display)
-                                    const parsedSeconds = parseDurationInput(inputValue);
-                                    field.onChange(parsedSeconds);
-                                    
-                                    // Set timer for auto-formatting when user stops typing
-                                    const timer = setTimeout(() => {
-                                        setIsTyping(false);
-                                        
-                                        // Apply smart auto-formatting
-                                        const autoFormatted = applyAutoFormatting(inputValue);
-                                        if (autoFormatted !== inputValue) {
-                                            setDisplayValue(autoFormatted);
-                                            // Update cursor position after auto-formatting
-                                            setTimeout(() => {
-                                                if (inputRef.current) {
-                                                    const newPosition = autoFormatted.length;
-                                                    inputRef.current.setSelectionRange(newPosition, newPosition);
-                                                }
-                                            }, 0);
-                                        }
-                                    }, 800); // Shorter delay for auto-formatting
-                                    setTypingTimer(timer);
-                                };
-                                
-                                const handleBlur = (e) => {
-                                    setIsTyping(false);
-                                    if (typingTimer) {
-                                        clearTimeout(typingTimer);
-                                        setTypingTimer(null);
-                                    }
-                                    
-                                    // Format the display value on blur for consistency
-                                    const parsedSeconds = parseDurationInput(e.target.value);
-                                    const formattedValue = formatDurationForInput(parsedSeconds);
-                                    setDisplayValue(formattedValue);
-                                    field.onBlur();
-                                };
-                                
-                                const handleFocus = () => {
-                                    // Allow natural editing - don't change the display value
-                                    setIsTyping(true);
-                                };
-                                
-                                // Dynamic helper text with hour-based format guidance
-                                const getHelperText = () => {
-                                    if (fieldState.error) return fieldState.error.message;
-                                    if (isTyping && displayValue && !isValidFormat) {
-                                        return 'Type h:m:s';
-                                    }
-                                    return 'Type h:m:s';
-                                };
-                                
-                                return (
-                                    <TextField
-                                        inputRef={inputRef}
-                                        label="Duration"
-                                        fullWidth
-                                        value={displayValue}
-                                        onChange={handleInputChange}
-                                        onBlur={handleBlur}
-                                        onFocus={handleFocus}
-                                        error={!!fieldState.error}
-                                        helperText={getHelperText()}
-                                        disabled={isSubmitting}
-                                        placeholder="h:m:s"
-                                        inputMode="text"
-                                        slotProps={{
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <TimeIcon 
-                                                            fontSize="small" 
-                                                            color={
-                                                                fieldState.error ? "error" :
-                                                                isValidFormat ? "primary" : 
-                                                                isTyping ? "action" : "action"
-                                                            }
-                                                        />
-                                                    </InputAdornment>
-                                                )
-                                            }
-                                        }}
-                                    />
-                                );
-                            }}
+                                    }}
+                                />
+                            )}
                         />
 
                         {/* Lesson Content & Description */}
