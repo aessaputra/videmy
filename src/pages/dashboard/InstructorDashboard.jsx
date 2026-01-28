@@ -100,7 +100,7 @@ export function InstructorDashboard() {
                 {/* Stats Grid */}
                 <Grid container spacing={3} sx={{ mb: 6 }}>
                     {stats.map((stat, index) => (
-                        <Grid item xs={12} sm={6} md={3} key={index}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                             <Paper
                                 elevation={0}
                                 sx={{
@@ -138,7 +138,7 @@ export function InstructorDashboard() {
 
                 {/* Quick Actions */}
                 <Grid container spacing={4}>
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                         <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
                             <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h6" fontWeight={600}>

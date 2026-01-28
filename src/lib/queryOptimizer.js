@@ -61,7 +61,7 @@ export const moduleFields = [
 
 /**
  * Lesson fields for list views
- * Excludes: content (if any large fields exist)
+ * Excludes: content (use lessonDetailFields for full content)
  */
 export const lessonFields = [
     '$id',
@@ -69,7 +69,24 @@ export const lessonFields = [
     'moduleId',
     'youtubeUrl',
     'duration',
-    'order'
+    'order',
+    'isFree'
+];
+
+/**
+ * Lesson fields for detail view
+ * Includes: content and all other fields
+ */
+export const lessonDetailFields = [
+    '$id',
+    'title',
+    'moduleId',
+    'youtubeUrl',
+    'duration',
+    'order',
+    'content',
+    'isFree',
+    'videoUrl'
 ];
 
 /**

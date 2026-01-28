@@ -100,7 +100,7 @@ export function AdminDashboard() {
                 {/* Stats Grid - Same style as InstructorDashboard */}
                 <Grid container spacing={3} sx={{ mb: 6 }}>
                     {stats.map((stat, index) => (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                             <Paper
                                 elevation={0}
                                 sx={{

@@ -62,7 +62,7 @@ export function Analytics() {
             {/* Stats Grid */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 {stats.map((stat, index) => (
-                    <Grid item xs={12} sm={6} md={3} key={index}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                         <Paper
                             sx={{
                                 p: 3,

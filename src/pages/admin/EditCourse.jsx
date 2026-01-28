@@ -50,13 +50,17 @@ import {
     Info as InfoIcon,
     DragIndicator as DragIcon
 } from '@mui/icons-material';
+import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { AddLessonDialog } from '../../components/admin/AddLessonDialog';
 import { useAuth, ROLES } from '../../context/AuthContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { databases, COLLECTIONS, DATABASE_ID, ID, Query, Permission, Role } from '../../lib/appwrite';
 import { ThumbnailUploader } from '../../components/admin/ThumbnailUploader';
+import { DraggableModule } from '../../components/admin/DraggableModule';
 import { formatDuration } from '../../lib/format';
 
 // Zod validation schema (English)
@@ -94,6 +98,7 @@ export function EditCourse() {
     const { id } = useParams();
     const { user, hasRole } = useAuth();
     const navigate = useNavigate();
+    const confirm = useConfirm();
 
     // Loading States
     const [loading, setLoading] = useState(true);
@@ -133,8 +138,8 @@ export function EditCourse() {
     // Dialog States
     const [moduleDialog, setModuleDialog] = useState(false);
     const [lessonDialog, setLessonDialog] = useState(false);
+    const [selectedModuleId, setSelectedModuleId] = useState(null);
     const [newModuleTitle, setNewModuleTitle] = useState('');
-    const [newLessonData, setNewLessonData] = useState({ title: '', youtubeUrl: '', duration: '', moduleId: '' });
 
     // Fetch course data and populate form
     useEffect(() => {
@@ -235,59 +240,139 @@ export function EditCourse() {
             setModules([...modules, res]);
             setModuleDialog(false);
             setNewModuleTitle('');
-            toast.success('Module added');
-        } catch {
+            toast.success('Module added successfully');
+        } catch (error) {
+            console.error('Add module failed:', error);
             toast.error('Failed to add module');
         }
     };
 
+    const handleUpdateModule = async (moduleId, newTitle) => {
+        try {
+            await databases.updateDocument(DATABASE_ID, COLLECTIONS.MODULES, moduleId, {
+                title: newTitle
+            });
+            setModules(modules.map(m => 
+                m.$id === moduleId ? { ...m, title: newTitle } : m
+            ));
+        } catch (error) {
+            console.error('Update module failed:', error);
+            throw error; // Re-throw to be handled by EditableModuleTitle
+        }
+    };
+
     const handleDeleteModule = async (moduleId) => {
-        if (!window.confirm('Delete this module? All lessons within it will be removed from view.')) return;
+        const confirmed = await confirm({
+            title: 'Delete Module?',
+            description: 'Are you sure you want to delete this module? All lessons within it will be removed from view. This action cannot be undone.',
+            confirmationText: 'Delete',
+            cancellationText: 'Cancel',
+            confirmationButtonProps: { variant: 'contained', color: 'error', autoFocus: true },
+        });
+
+        if (!confirmed) return;
+
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.MODULES, moduleId);
             setModules(modules.filter(m => m.$id !== moduleId));
             setLessons(lessons.filter(l => l.moduleId !== moduleId));
-            toast.success('Module deleted');
-        } catch {
+            toast.success('Module deleted successfully');
+        } catch (error) {
+            console.error('Delete module failed:', error);
             toast.error('Failed to delete module');
+        }
+    };
+
+    const handleDuplicateModule = async (module) => {
+        try {
+            const duplicatedModule = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.MODULES,
+                ID.unique(),
+                { 
+                    title: `${module.title} (Copy)`, 
+                    courseId: id, 
+                    order: modules.length 
+                },
+                [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
+            );
+            setModules([...modules, duplicatedModule]);
+            toast.success('Module duplicated successfully');
+        } catch (error) {
+            console.error('Duplicate module failed:', error);
+            toast.error('Failed to duplicate module');
+        }
+    };
+
+    const handleMoveModule = async (fromIndex, toIndex) => {
+        if (toIndex < 0 || toIndex >= modules.length) return;
+        
+        const newModules = [...modules];
+        const [movedModule] = newModules.splice(fromIndex, 1);
+        newModules.splice(toIndex, 0, movedModule);
+        
+        // Update local state immediately for better UX
+        setModules(newModules);
+        
+        try {
+            // Update order in database
+            const updatePromises = newModules.map((module, index) =>
+                databases.updateDocument(DATABASE_ID, COLLECTIONS.MODULES, module.$id, {
+                    order: index
+                })
+            );
+            await Promise.all(updatePromises);
+            toast.success('Module order updated');
+        } catch (error) {
+            console.error('Move module failed:', error);
+            toast.error('Failed to update module order');
+            // Revert on error
+            setModules(modules);
         }
     };
 
     // Lesson Handlers
     const openAddLesson = (moduleId) => {
-        setNewLessonData({ title: '', youtubeUrl: '', duration: '', moduleId });
+        setSelectedModuleId(moduleId);
         setLessonDialog(true);
     };
 
-    const handleAddLesson = async () => {
-        if (!newLessonData.title || !newLessonData.moduleId) return;
+    const handleAddLesson = async (lessonData) => {
         try {
             const res = await databases.createDocument(
                 DATABASE_ID,
                 COLLECTIONS.LESSONS,
                 ID.unique(),
                 {
-                    title: newLessonData.title,
-                    youtubeUrl: newLessonData.youtubeUrl,
-                    duration: parseDuration(newLessonData.duration),
-                    moduleId: newLessonData.moduleId,
-                    order: lessons.filter(l => l.moduleId === newLessonData.moduleId).length,
-                    content: '',
-                    isFree: false
+                    title: lessonData.title,
+                    youtubeUrl: lessonData.youtubeUrl,
+                    duration: lessonData.duration,
+                    moduleId: lessonData.moduleId,
+                    order: lessons.filter(l => l.moduleId === lessonData.moduleId).length,
+                    content: lessonData.content || ''
                 },
                 [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
             );
             setLessons(prev => [...prev, res]);
             setLessonDialog(false);
             await databases.updateDocument(DATABASE_ID, COLLECTIONS.COURSES, id, { lessonsCount: lessons.length + 1 });
-            toast.success('Lesson added');
-        } catch {
-            toast.error('Failed to add lesson');
+        } catch (error) {
+            console.error('Add lesson failed:', error);
+            throw error; // Re-throw to let AddLessonDialog handle the error
         }
     };
 
     const handleDeleteLesson = async (lessonId) => {
-        if (!window.confirm('Delete this lesson?')) return;
+        const confirmed = await confirm({
+            title: 'Delete Lesson?',
+            description: 'Are you sure you want to delete this lesson? This action cannot be undone.',
+            confirmationText: 'Delete',
+            cancellationText: 'Cancel',
+            confirmationButtonProps: { variant: 'contained', color: 'error', autoFocus: true },
+        });
+
+        if (!confirmed) return;
+
         try {
             await databases.deleteDocument(DATABASE_ID, COLLECTIONS.LESSONS, lessonId);
             setLessons(lessons.filter(l => l.$id !== lessonId));
@@ -296,6 +381,54 @@ export function EditCourse() {
         } catch {
             toast.error('Failed to delete lesson');
         }
+    };
+
+    const handleUpdateLesson = async (lessonId, updatedData) => {
+        try {
+            await databases.updateDocument(DATABASE_ID, COLLECTIONS.LESSONS, lessonId, updatedData);
+            setLessons(lessons.map(l => 
+                l.$id === lessonId ? { ...l, ...updatedData } : l
+            ));
+            toast.success('Lesson updated successfully');
+        } catch (error) {
+            console.error('Update lesson failed:', error);
+            toast.error('Failed to update lesson');
+            throw error; // Re-throw to be handled by EditableLessonTitle
+        }
+    };
+
+    const handleDragEnd = (result) => {
+        if (!result.destination) return;
+
+        const { source, destination } = result;
+        
+        if (source.index === destination.index) return;
+
+        // Reorder modules
+        const newModules = Array.from(modules);
+        const [reorderedModule] = newModules.splice(source.index, 1);
+        newModules.splice(destination.index, 0, reorderedModule);
+
+        // Update local state immediately for better UX
+        setModules(newModules);
+
+        // Update order in database
+        const updatePromises = newModules.map((module, index) =>
+            databases.updateDocument(DATABASE_ID, COLLECTIONS.MODULES, module.$id, {
+                order: index
+            })
+        );
+
+        Promise.all(updatePromises)
+            .then(() => {
+                toast.success('Module order updated');
+            })
+            .catch((error) => {
+                console.error('Drag reorder failed:', error);
+                toast.error('Failed to update module order');
+                // Revert on error
+                setModules(modules);
+            });
     };
 
     const handleDeleteCourse = async () => {
@@ -379,53 +512,36 @@ export function EditCourse() {
                                 <Button variant="outlined" onClick={() => setModuleDialog(true)} startIcon={<AddIcon />}>Create Module</Button>
                             </Paper>
                         ) : (
-                            <Stack spacing={3}>
-                                {modules.map((module, index) => (
-                                    <Card key={module.$id} variant="outlined" sx={{ overflow: 'visible' }}>
-                                        <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <Stack direction="row" spacing={1} alignItems="center">
-                                                <DragIcon sx={{ color: 'text.disabled', cursor: 'grab' }} fontSize="small" />
-                                                <Typography fontWeight={600}>Module {index + 1}: {module.title}</Typography>
-                                            </Stack>
-                                            <Box>
-                                                <IconButton size="small" onClick={() => openAddLesson(module.$id)} title="Add Lesson"><AddIcon /></IconButton>
-                                                <IconButton size="small" color="error" onClick={() => handleDeleteModule(module.$id)}><DeleteIcon /></IconButton>
-                                            </Box>
-                                        </Box>
-                                        <Box>
-                                            <List disablePadding>
-                                                {lessons.filter(l => l.moduleId === module.$id).map((lesson, lIdx) => (
-                                                    <ListItem key={lesson.$id} divider sx={{ pl: 4 }}>
-                                                        <LessonIcon sx={{ mr: 2, color: 'primary.main', fontSize: 20 }} />
-                                                        <ListItemText
-                                                            primary={lesson.title}
-                                                            secondary={formatDuration(lesson.duration)}
-                                                            primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
-                                                        />
-                                                        <ListItemSecondaryAction>
-                                                            <IconButton edge="end" size="small" color="error" onClick={() => handleDeleteLesson(lesson.$id)}>
-                                                                <DeleteIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </ListItemSecondaryAction>
-                                                    </ListItem>
-                                                ))}
-                                                {lessons.filter(l => l.moduleId === module.$id).length === 0 && (
-                                                    <Box sx={{ p: 2, pl: 4 }}>
-                                                        <Button
-                                                            size="small"
-                                                            startIcon={<AddIcon />}
-                                                            onClick={() => openAddLesson(module.$id)}
-                                                            sx={{ color: 'text.secondary' }}
-                                                        >
-                                                            Add first lesson
-                                                        </Button>
-                                                    </Box>
-                                                )}
-                                            </List>
-                                        </Box>
-                                    </Card>
-                                ))}
-                            </Stack>
+                            <DragDropContext onDragEnd={handleDragEnd}>
+                                <Droppable droppableId="modules-list">
+                                    {(provided) => (
+                                        <Stack 
+                                            spacing={3}
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                        >
+                                            {modules.map((module, index) => (
+                                                <DraggableModule
+                                                    key={module.$id}
+                                                    module={module}
+                                                    index={index}
+                                                    lessons={lessons}
+                                                    onUpdateModule={handleUpdateModule}
+                                                    onDeleteModule={handleDeleteModule}
+                                                    onDuplicateModule={handleDuplicateModule}
+                                                    onMoveModule={handleMoveModule}
+                                                    onAddLesson={openAddLesson}
+                                                    onUpdateLesson={handleUpdateLesson}
+                                                    onDeleteLesson={handleDeleteLesson}
+                                                    canMoveUp={index > 0}
+                                                    canMoveDown={index < modules.length - 1}
+                                                />
+                                            ))}
+                                            {provided.placeholder}
+                                        </Stack>
+                                    )}
+                                </Droppable>
+                            </DragDropContext>
                         )}
                     </Box>
 
@@ -465,7 +581,7 @@ export function EditCourse() {
                                         )}
                                     />
                                     <Grid container spacing={3}>
-                                        <Grid item xs={12} md={6}>
+                                        <Grid size={{ xs: 12, md: 6 }}>
                                             <Controller
                                                 name="category"
                                                 control={control}
@@ -615,35 +731,12 @@ export function EditCourse() {
                     </DialogActions>
                 </Dialog>
 
-                <Dialog open={lessonDialog} onClose={() => setLessonDialog(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Add New Lesson</DialogTitle>
-                    <DialogContent>
-                        <Stack spacing={3} sx={{ mt: 1 }}>
-                            <TextField
-                                label="Lesson Title"
-                                fullWidth
-                                value={newLessonData.title}
-                                onChange={(e) => setNewLessonData({ ...newLessonData, title: e.target.value })}
-                            />
-                            <TextField
-                                label="YouTube Video URL"
-                                fullWidth
-                                value={newLessonData.youtubeUrl}
-                                onChange={(e) => setNewLessonData({ ...newLessonData, youtubeUrl: e.target.value })}
-                            />
-                            <TextField
-                                label="Duration e.g H:MM:SS"
-                                fullWidth
-                                value={newLessonData.duration}
-                                onChange={(e) => setNewLessonData({ ...newLessonData, duration: e.target.value })}
-                            />
-                        </Stack>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setLessonDialog(false)}>Cancel</Button>
-                        <Button onClick={handleAddLesson} variant="contained">Save Lesson</Button>
-                    </DialogActions>
-                </Dialog>
+                <AddLessonDialog
+                    open={lessonDialog}
+                    onClose={() => setLessonDialog(false)}
+                    moduleId={selectedModuleId}
+                    onSave={handleAddLesson}
+                />
             </Container>
         </Box>
     );
