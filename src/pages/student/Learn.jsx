@@ -50,6 +50,20 @@ import {
  * MUI-based video player with lesson navigation sidebar.
  * OPTIMIZED: Uses Query.select() to reduce response size by ~60%
  */
+
+// Helper: Format seconds to MM:SS or H:MM:SS
+const formatDuration = (seconds) => {
+    if (!seconds) return 'Video';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+
+    if (h > 0) {
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
 export function Learn() {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
@@ -181,7 +195,7 @@ export function Learn() {
                         id: l.$id,
                         title: l.title,
                         youtubeUrl: l.youtubeUrl,
-                        duration: l.duration ? `${l.duration}m` : '10:00'
+                        duration: formatDuration(l.duration)
                     }))
                 }));
 

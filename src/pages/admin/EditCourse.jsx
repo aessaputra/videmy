@@ -87,10 +87,16 @@ const parseDuration = (input) => {
     return 0;
 };
 
-// Helper: Format seconds to MM:SS
+// Helper: Format seconds to MM:SS or H:MM:SS
 const formatDuration = (seconds) => {
-    const m = Math.floor(seconds / 60);
+    if (!seconds) return '0:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
+
+    if (h > 0) {
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
     return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
@@ -620,32 +626,33 @@ export function EditCourse() {
                 </Dialog>
 
                 <Dialog open={lessonDialog} onClose={() => setLessonDialog(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Add New Lesson</DialogTitle>
+                    <DialogTitle>Tambah Materi Baru</DialogTitle>
                     <DialogContent>
                         <Stack spacing={3} sx={{ mt: 1 }}>
                             <TextField
-                                label="Lesson Title"
+                                label="Judul Materi"
                                 fullWidth
                                 value={newLessonData.title}
                                 onChange={(e) => setNewLessonData({ ...newLessonData, title: e.target.value })}
                             />
                             <TextField
-                                label="YouTube Video URL"
+                                label="URL Video YouTube"
                                 fullWidth
                                 value={newLessonData.youtubeUrl}
                                 onChange={(e) => setNewLessonData({ ...newLessonData, youtubeUrl: e.target.value })}
                             />
                             <TextField
-                                label="Duration (MM:SS)"
+                                label="Durasi (contoh: 23:12 atau 1:08:29)"
                                 fullWidth
                                 value={newLessonData.duration}
                                 onChange={(e) => setNewLessonData({ ...newLessonData, duration: e.target.value })}
+                                helperText="Format: Menit:Detik (23:12) atau Jam:Menit:Detik (1:08:29)"
                             />
                         </Stack>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => setLessonDialog(false)}>Cancel</Button>
-                        <Button onClick={handleAddLesson} variant="contained">Add Lesson</Button>
+                        <Button onClick={() => setLessonDialog(false)}>Batal</Button>
+                        <Button onClick={handleAddLesson} variant="contained">Simpan Materi</Button>
                     </DialogActions>
                 </Dialog>
             </Container>
