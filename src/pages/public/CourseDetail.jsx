@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { databases, functions, COLLECTIONS, DATABASE_ID, Query, ID, getUserAvatar } from '../../lib/appwrite';
+import { formatDuration } from '../../lib/format';
 
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import {
@@ -50,18 +51,7 @@ import {
 // Motion wrapper
 const MotionBox = motion.create(Box);
 
-// Helper: Format seconds to MM:SS or H:MM:SS (Same as in EditCourse)
-const formatDuration = (seconds) => {
-    if (!seconds) return 'Video';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
 
-    if (h > 0) {
-        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m}:${s.toString().padStart(2, '0')}`;
-};
 
 /**
  * Course Detail Page

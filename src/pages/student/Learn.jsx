@@ -32,6 +32,7 @@ import videmyLogo from '../../assets/videmy-logo.png';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { databases, COLLECTIONS, DATABASE_ID, Query, ID } from '../../lib/appwrite';
+import { formatDuration } from '../../lib/format';
 import { VideoPlayer } from '../../components/course';
 import {
     courseDetailFields,
@@ -51,18 +52,7 @@ import {
  * OPTIMIZED: Uses Query.select() to reduce response size by ~60%
  */
 
-// Helper: Format seconds to MM:SS or H:MM:SS
-const formatDuration = (seconds) => {
-    if (!seconds) return 'Video';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
 
-    if (h > 0) {
-        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-    return `${m}:${s.toString().padStart(2, '0')}`;
-};
 
 export function Learn() {
     const { courseId, lessonId } = useParams();
