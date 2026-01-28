@@ -184,29 +184,23 @@ async function handleVerify({ req, res, log, error, stripe, databases }) {
  */
 async function handleWebhook({ req, res, log, error, stripe, databases }) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    let event;
 
-    if (webhookSecret) {
-        // Safe / Best Practice
-        const signature = req.headers['stripe-signature'];
-        try {
-            // Appwrite Cloud passes raw body string, but we need to ensure it's not parsed JSON object if we want to verify.
-            // Check Appwrite runtime docs: req.bodyRaw might be available or req.body is string.
-            // My previous logs showed Body Type: string.
-            event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
-        } catch (err) {
-            error(`Webhook Signature Verification Failed: ${err.message}`);
-            return res.json({ ok: false, error: 'Webhook Signature Verification Failed' }, 400);
-        }
-    } else {
-        // Unsafe Fallback (User Warned)
-        log('WARNING: STRIPE_WEBHOOK_SECRET missing. Skipping signature verification.');
-        try {
-            const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-            event = body;
-        } catch (err) {
-            return res.json({ ok: false, error: 'Webhook Error' }, 400);
-        }
+    // Security: Webhook secret is REQUIRED to prevent fake webhooks
+    if (!webhookSecret) {
+        error('CRITICAL: STRIPE_WEBHOOK_SECRET is not configured.');
+        return res.json({ ok: false, error: 'Server misconfiguration' }, 500);
+    }
+
+    let event;
+    const signature = req.headers['stripe-signature'];
+
+    try {
+        // Verify webhook signature (best practice)
+        event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
+        log(`✅ Webhook signature verified: ${event.type}`);
+    } catch (err) {
+        error(`❌ Webhook signature verification failed: ${err.message}`);
+        return res.json({ ok: false, error: 'Invalid webhook signature' }, 400);
     }
 
     if (event.type === 'checkout.session.completed') {

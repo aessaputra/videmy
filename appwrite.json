@@ -17,7 +17,9 @@
             ],
             "events": [],
             "schedule": "",
-            "timeout": 15
+            "timeout": 15,
+            "logging": true,
+            "commands": "npm install"
         },
         {
             "$id": "6978beb0001820d28ca3",
@@ -30,7 +32,7 @@
                 ".env"
             ],
             "execute": [
-                "users"
+                "role:admin"
             ],
             "events": [],
             "schedule": "",
